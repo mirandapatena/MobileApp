@@ -2,8 +2,9 @@
 import RNFetchBlob from 'react-native-fetch-blob'
 var ImagePicker = require('react-native-image-picker');
 import React, { Component } from "react";
-import {Platform, Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
+import { Platform, Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
+import BottomDrawer from 'rn-bottom-drawer';
 import ActionButton, { ActionButtonItem } from 'react-native-action-button';
 import AwesomeButton from 'react-native-really-awesome-button';
 import Button from 'react-native-button';
@@ -26,7 +27,7 @@ window.XMLHttpRequest = RNFetchBlob.polyfill.XMLHttpRequest
 window.Blob = Blob
 
 var screen = Dimensions.get('window');
-var profileName='LOL';
+
 
 export default class RegularUser extends Component {
     _isMounted = false;
@@ -45,16 +46,17 @@ export default class RegularUser extends Component {
             lastName: "",
             user: null,
             markerLat: null,
+            isIncidentReady: false,
             markerLng: null,
             unresponded: true,
             isResponding: false,
             isSettled: false,
             incidentID: '',
-            isImageViewVisible:false, 
-            imageIndex:'',
-            image_uri:'',
-            uploading:false,
-            progress:0,
+            isImageViewVisible: false,
+            imageIndex: '',
+            image_uri: '',
+            uploading: false,
+            progress: 0,
             incidentUserKey: '',
             incidentPhoto: '',
             reportedBy: '',
@@ -102,20 +104,21 @@ export default class RegularUser extends Component {
             1000
         );
     }
-   
-    
-      getImage(){
-    
+
+
+    getImage() {
+
         ImagePicker.launchCamera(options, (response) => {
-          
-    
-          this.imageBlob(response.uri)
-            .then(url => { alert('uploaded'); this.setState({image_uri: url}) })
-            .catch(error => console.log(error))
-    
-          }
-        )};
-    
+
+
+            this.imageBlob(response.uri)
+                .then(url => { alert('uploaded'); this.setState({ image_uri: url }) })
+                .catch(error => console.log(error))
+
+        }
+        )
+    };
+
 
     onPress = data => {
         this.setState({ data });
@@ -130,11 +133,9 @@ export default class RegularUser extends Component {
         this._isMounted = true;
         app.auth().onAuthStateChanged(user => {
             if (user) {
-                if (this._isMounted) {
-                    this.setState({ user, userId: user.uid });
-                    this.getUserInfo();
-                    this.incidentState(this.state.userId);
-                }
+                this.setState({ user, userId: user.uid });
+                this.getUserInfo();
+                this.incidentState(this.state.userId);
             }
         });
     }
@@ -143,25 +144,28 @@ export default class RegularUser extends Component {
         var userType = '';
         var firstName = '';
         var lastName = '';
-
+        var that = this;
         console.log("HI", this.state.userId);
         this.user2 = app.database().ref(`users/${this.state.userId}/`);
         this.user2.on('value', function (snapshot) {
-            const data2 = snapshot.val() || null;
-            console.log("data2", data2);
+            const dataUser = snapshot.val() || null;
+            console.log("data2", dataUser);
 
-            if (data2) {
-                userType = data2.user_type;
-                firstName = data2.firstName;
-                lastName = data2.lastName;
+            if (dataUser) {
+                userType = dataUser.user_type;
+                firstName = dataUser.firstName;
+                lastName = dataUser.lastName;
+                // profileName = dataUser.firstName;
+                // profileType = dataUser.user_type;
             }
-            profileName=data2.firstName;
+            that.setState({ userType, firstName, lastName });
+            console.log("USER TYPE", that.state.userType, that.state.firstName, that.state.lastName, that.state.userId)
         })
-        this.setState({ userType, firstName, lastName });
-        console.log("USER TYPE", this.state.userType, this.state.firstName, this.state.lastName, this.state.userId)
+
+
 
     }
-  
+
     componentDidMount() {
 
         this.authListener();
@@ -180,9 +184,9 @@ export default class RegularUser extends Component {
                         lat: this.state.latitude
                     },
                 })
-                .then(()=>{
-                    console.log('Data coordinates: ',this.state.longitude,' ',this.state.latitude);
-                });
+                    .then(() => {
+                        console.log('Data coordinates: ', this.state.longitude, ' ', this.state.latitude);
+                    });
 
             },
             error => this.setState({ error: error.message }),
@@ -203,18 +207,18 @@ export default class RegularUser extends Component {
                         lat: this.state.latitude
                     },
                 })
-                .then(()=>{
-                    console.log('Coordinates Updated: ',this.state.longitude,' ',this.state.latitude);
-                });
+                    .then(() => {
+                        console.log('Coordinates Updated: ', this.state.longitude, ' ', this.state.latitude);
+                    });
 
             },
             error => this.setState({ error: error.message }),
-            { enableHighAccuracy: true, distanceFilter: 1, interval:4000}
+            { enableHighAccuracy: true, distanceFilter: 5, interval: 4000 }
         );
     }
 
 
-    
+
 
     responderCoordinates = () => {
 
@@ -290,14 +294,15 @@ export default class RegularUser extends Component {
                     var reportedBy = incidentDetails.reportedBy
                     var isSettled = incidentDetails.isSettled;
                     var incidentType = incidentDetails.incidentType;
+                    var incidentLocation = incidentDetails.incidentLocation
                     var destinationPlaceId = incidentDetails.destinationPlaceId;
-                    console.log("DESTINATION PLACE", destinationPlaceId);   
+                    console.log("DESTINATION PLACE", destinationPlaceId);
                     var incidentLocation = incidentDetails.incidentLocation;
                     if (reportedBy === userId && isSettled === false) {
 
                         that.incidentResponderListener(incidentID);
                         that.incidentVolunteerListener(incidentID);
-                        that.setState({ markerLat, markerLng, isSettled: false });
+                        that.setState({ markerLat, markerLng, isSettled: false, incidentType, incidentLocation, isIncidentReady: true });
                         that.getRouteDirection(destinationPlaceId, incidentLocation);
 
 
@@ -321,7 +326,7 @@ export default class RegularUser extends Component {
     incidentSettled = (userId, incidentType, incidentLocation) => {
 
 
-        this.setState({ isSettled: true })
+        this.setState({ isSettled: true, isIncidentReady: false })
         this.setState({ markerCoords: null });
 
         Alert.alert(
@@ -368,7 +373,7 @@ export default class RegularUser extends Component {
                     if (hasResponderAlerted === false) {
                         Alert.alert(
                             "A Responder has accepted an incident "
-                            , `${responderRespondingID}`,
+                            , `Responder is on the way!`,
                             [
                                 {
                                     text: "Ok", onPress: () => {
@@ -419,7 +424,7 @@ export default class RegularUser extends Component {
                     if (hasVolunteerAlerted === false) {
                         Alert.alert(
                             "A Volunteer has accepted an incident "
-                            , `${volunteerRespondingID}`,
+                            , `Volunteer is on the way!`,
                             [
                                 { text: "Ok", onPress: () => { that.hasVolunteerAlert() } },
                             ],
@@ -462,24 +467,24 @@ export default class RegularUser extends Component {
             this.state.longitude
             }&destination=place_id:${destinationPlaceId}&key=${apiKey}`
         )
-        .then((res)=>res.json())
-        .then(json =>{
-            const points = PolyLine.decode(json.routes[0].overview_polyline.points);
-            const pointCoords = points.map(point => {
-                return { latitude: point[0], longitude: point[1] };
+            .then((res) => res.json())
+            .then(json => {
+                const points = PolyLine.decode(json.routes[0].overview_polyline.points);
+                const pointCoords = points.map(point => {
+                    return { latitude: point[0], longitude: point[1] };
+                });
+                this.setState({
+                    pointCoords,
+                    locationPredictions: [],
+                    incidentLocation: destinationName,
+                    destinationPlaceId,
+                });
+                Keyboard.dismiss();
+                this.map.fitToCoordinates(pointCoords);
+            })
+            .catch((error) => {
+                console.log(error);
             });
-            this.setState({
-                pointCoords,
-                locationPredictions: [],
-                incidentLocation: destinationName,
-                destinationPlaceId,
-            });
-            Keyboard.dismiss();
-            this.map.fitToCoordinates(pointCoords);
-        })
-        .catch((error)=>{
-            console.log(error);
-        });
     }
 
     async onChangeDestination(incidentLocation) {
@@ -487,18 +492,18 @@ export default class RegularUser extends Component {
         const apiUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${apiKey}&input={${incidentLocation}}&location=${
             this.state.latitude
             },${this.state.longitude}&radius=2000`;
-            try{
-                const result = await fetch(apiUrl);
-                const jsonResult = await result.json();
-                this.setState({
-                    locationPredictions: jsonResult.predictions
-                });
-                console.log(jsonResult);
-            }
-            catch(err){
-                console.error(err)
-            }
-      
+        try {
+            const result = await fetch(apiUrl);
+            const jsonResult = await result.json();
+            this.setState({
+                locationPredictions: jsonResult.predictions
+            });
+            console.log(jsonResult);
+        }
+        catch (err) {
+            console.error(err)
+        }
+
     }
 
     _toggleModal = () => {
@@ -518,32 +523,32 @@ export default class RegularUser extends Component {
 
     imageBlob(uri, mime = 'application/octet-stream') {
         return new Promise((resolve, reject) => {
-          const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri
-          let uploadBlob = null
-          const imageRef = app.storage().ref(`/reports/RegularUser/${currentUser.uid}`)
-    
-          fs.readFile(uploadUri, 'base64')
-            .then((data) => {
-              return Blob.build(data, { type: `${mime};BASE64` })
-            })
-            .then((blob) => {
-              uploadBlob = blob
-              return imageRef.put(blob, { contentType: mime })
-            })
-            .then(() => {
-              uploadBlob.close()
-              return imageRef.getDownloadURL()
-            })
-            .then((url) => {
-              resolve(url)
-              console.log(url)
-            })
-            .catch((error) => {
-              reject(error)
-          })
+            const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri
+            let uploadBlob = null
+            const imageRef = app.storage().ref(`/reports/RegularUser/${currentUser.uid}`)
+
+            fs.readFile(uploadUri, 'base64')
+                .then((data) => {
+                    return Blob.build(data, { type: `${mime};BASE64` })
+                })
+                .then((blob) => {
+                    uploadBlob = blob
+                    return imageRef.put(blob, { contentType: mime })
+                })
+                .then(() => {
+                    uploadBlob.close()
+                    return imageRef.getDownloadURL()
+                })
+                .then((url) => {
+                    resolve(url)
+                    console.log(url)
+                })
+                .catch((error) => {
+                    reject(error)
+                })
         })
-      }
-   
+    }
+
 
     submitIncidentHandler = () => {
         var time = new Date();
@@ -564,7 +569,7 @@ export default class RegularUser extends Component {
             reportedBy: this.state.userId,
             timeReceive: date,
             timeResponded: '',
-            image_uri:this.state.image_uri,
+            image_uri: this.state.image_uri,
             responderResponding: '',
             volunteerResponding: '',
             coordinates: {
@@ -586,7 +591,7 @@ export default class RegularUser extends Component {
             isResponding: null,
             isSettled: null,
             incidentPhoto: '',
-            image_uri:'',
+            image_uri: '',
             reportedBy: '',
             timeReceive: '',
             timeResponded: '',
@@ -633,75 +638,82 @@ export default class RegularUser extends Component {
         });
 
     }
-    pressedPrediction(prediction) {
-        console.log(prediction);
+    pressedPrediction(place_id, description) {
+        // console.log(prediction);
         Keyboard.dismiss();
         this.setState({
-          locationPredictions: [],
-          destination: prediction.description
+            locationPredictions: [],
+            incidentLocation: description,
+            destinationPlaceId: place_id
         });
         Keyboard;
-      }
+        this.getRouteDirection(place_id, description);
+    }
 
-      renderContent = () => {
+    renderContent = () => {
         return (
             <View style={styles.main}>
-            <View>
-          <Text style={{
-                      fontSize: 20,
-                      color:'white',
-                      fontWeight: 'bold',
-                      textAlign: 'center',
-                      marginTop: 5}}> 
-                  {this.state.incidentType}
-          </Text>
-          <Text style={{
-                      color:'white',
-                      fontSize: 19,
-                      textAlign: 'center',
-                      marginBottom: 7}}>  
-                  {this.state.incidentLocation}          
-          </Text></View>
-        </View>
-      )
+                <View>
+                    <Text style={{
+                        fontSize: 20,
+                        color: 'white',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        marginTop: 5
+                    }}>
+                        {this.state.incidentType}
+                    </Text>
+                    <Text style={{
+                        color: 'white',
+                        fontSize: 19,
+                        textAlign: 'center',
+                        marginBottom: 7
+                    }}>
+                        {this.state.incidentLocation}
+                    </Text></View>
+            </View>
+        )
     }
 
-    renderSideMenu(){
-        return(
+    renderSideMenu() {
+        return (
             <View>
-              <Text style={{color:'white', fontWeight:'bold', fontSize:50}}>
-                     Hello {this.state.firstName}!
+                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 50 }}>
+                    Hello {this.state.firstName}!
                  </Text>
-                 <TouchableOpacity onPress={()=>{console.log(profileName)}}>
-                     <Text style={{color:'white', fontSize:30}}>
-                         Profile
+                <Text style={{ color: 'white', fontWeight: 'normal', fontSize: 15 }}>
+                    You are a {this.state.userType}.
+                 </Text>
+                <TouchableOpacity onPress={() => { console.log(profileName) }}>
+                    <Text style={{ color: 'white', fontSize: 30 }}>
+                        Profile
                      </Text>
-                 </TouchableOpacity>
-                 <TouchableOpacity onPress={this.signOutUser}>
-                     <Text style={{color:'white', fontSize:30}}>
-                         Log Out
+                </TouchableOpacity>
+                <TouchableOpacity onPress={this.signOutUser}>
+                    <Text style={{ color: 'white', fontSize: 30 }}>
+                        Log Out
                      </Text>
-                 </TouchableOpacity>
+                </TouchableOpacity>
             </View>
         )
     }
 
-    renderTopRightView(){
-        return(
-            <View style={{top:10,left:75}}>
-                <Image style={{width:65, height:65}} source={require("../images/avatar.png")}/>
+    renderTopRightView() {
+        return (
+            <View style={{ top: 10, left: 75 }}>
+                <Image style={{ width: 65, height: 65 }} source={require("../images/avatar.png")} />
             </View>
         )
     }
-    
+
     render() {
-        const {isImageViewVisible, imageIndex} = this.state;
+        const { isImageViewVisible, imageIndex } = this.state;
         const images = [
-          {
-              source: {
-                  uri:this.state.image_uri
-                  },
-          },
+            {
+                source: {
+                    uri: this.state.image_uri
+                },
+            },
         ];
         console.log("marekr coords", this.state.markerLat, this.state.markerLng, this.state.isSettled);
         let marker = null;
@@ -714,8 +726,33 @@ export default class RegularUser extends Component {
                             longitude: this.state.markerLng
                         }
                     }
-                />
+                    title={`${this.state.incidentType}`}
+                    description={this.state.incidentLocation}
+                >
+                    <Image
+                        source={require("../images/alert.png")}
+                        style={{ height: 45, width: 45 }} />
+                </Marker>
 
+            )
+        }
+
+        if (this.state.latitude) {
+            getUserLocation = (
+                <Marker
+                    coordinate={
+                        {
+                            latitude: this.state.latitude,
+                            longitude: this.state.longitude
+                        }
+                    }
+                    title={`Hello ${this.state.firstName}`}
+                    description={'You are here'}
+                >
+                    <Image
+                        source={require("../images/userPosition.png")}
+                        style={{ height: 45, width: 45 }} />
+                </Marker>
             )
         }
         var markerResponder = null;
@@ -726,7 +763,13 @@ export default class RegularUser extends Component {
                         latitude: this.state.responderLat,
                         longitude: this.state.responderLng,
                     }}
-                />
+                    title={`Responder`}
+                    description={'Responder is here'}
+                >
+                    <Image
+                        source={require("../images/tracking_responder.png")}
+                        style={{ height: 45, width: 45 }} />
+                </Marker>
             );
         }
 
@@ -738,7 +781,13 @@ export default class RegularUser extends Component {
                         latitude: this.state.volunteerLat,
                         longitude: this.state.volunteerLng,
                     }}
-                />
+                    title={`Volunteer`}
+                    description={'Volunteer is here'}
+                >
+                    <Image
+                        source={require("../images/tracking_volunteer.png")}
+                        style={{ height: 45, width: 45 }} />
+                </Marker>
             );
         }
         if (this.state.latitude === null) return null;
@@ -749,7 +798,7 @@ export default class RegularUser extends Component {
                     key={prediction.id}
                     onPress={() =>
                         this.pressedPrediction(
-                           
+                            prediction.place_id,
                             prediction.description
                         )
                     }
@@ -762,21 +811,21 @@ export default class RegularUser extends Component {
             )
         );
 
-     
+
         return (
             <View style={styles.container}>
 
-        <Drawer
-             style={styles.mapDrawerOverlay}
-             ref="DRAWER"
-             primaryColor="#2d2d2d"
-             secondaryColor="#5C7788"
-             cancelColor="#5C7788"
-             sideMenu={this.renderSideMenu()}
-             topRightView={this.renderTopRightView()}/>
+                <Drawer
+                    style={styles.mapDrawerOverlay}
+                    ref="DRAWER"
+                    primaryColor="#2d2d2d"
+                    secondaryColor="#5C7788"
+                    cancelColor="#5C7788"
+                    sideMenu={this.renderSideMenu()}
+                    topRightView={this.renderTopRightView()} />
 
-<View style={{alignSelf:'flex-end', position:'absolute', marginTop:8, paddingRight:8}}><AwesomeButton backgroundColor="#2d2d2d" borderRadius={50} height={35} width={35} raiseLevel={2} backgroundDarker="rgba(0,0,0,0.05)" onPress={this._openDrawer}>
-          <Image style={{width:22.63, height:15.33}} source={require("../images/menu.png")}/></AwesomeButton></View>
+                <View style={{ alignSelf: 'flex-end', position: 'absolute', marginTop: 8, paddingRight: 8 }}><AwesomeButton backgroundColor="#2d2d2d" borderRadius={50} height={35} width={35} raiseLevel={2} backgroundDarker="rgba(0,0,0,0.05)" onPress={this._openDrawer}>
+                    <Image style={{ width: 22.63, height: 15.33 }} source={require("../images/menu.png")} /></AwesomeButton></View>
 
                 <MapView
                     ref={map => { this.map = map; }}
@@ -788,11 +837,12 @@ export default class RegularUser extends Component {
                         latitudeDelta: 0.015,
                         longitudeDelta: 0.0121,
                     }}
-                    showsUserLocation={true}
+                // showsUserLocation={true}
 
                 >
-                
-                  {/* <Polyline
+                    {getUserLocation}
+
+                    {/* <Polyline
                         coordinates={this.state.pointCoords}
                         strokeWidth={4}
                         strokeColor="red"
@@ -801,26 +851,26 @@ export default class RegularUser extends Component {
                         coordinates={this.state.pointCoords}
                         strokeWidth={4}
                         strokeColor="red"
-                    /> }
+                    />}
                     {this.state.isSettled === true ? null : marker}
                     {this.state.isSettled === true ? null : markerResponder}
                     {this.state.isSettled === true ? null : markerVolunteer}
 
                 </MapView>
 
-{this.state.isIncidentReady ?
-    <BottomDrawer containerHeight={170} startUp={false} roundedEdges={true}>
-          {this.renderContent()}
-    </BottomDrawer> :
-    <ActionButton
-    buttonColor="#2d2d2d"
-    shadowStyle={{shadowRadius:10, shadowColor:'black', shadowOpacity:1}}
-    position='left'
-    offsetX={13}
-    onPress={this._toggleModal}
-    icon={<Image source={require("../images/sendreport.png")}/>}
-    />
-}
+                {this.state.isIncidentReady ?
+                    <BottomDrawer containerHeight={170} startUp={false} roundedEdges={true}>
+                        {this.renderContent()}
+                    </BottomDrawer> :
+                    <ActionButton
+                        buttonColor="#2d2d2d"
+                        shadowStyle={{ shadowRadius: 10, shadowColor: 'black', shadowOpacity: 1 }}
+                        position='left'
+                        offsetX={13}
+                        onPress={this._toggleModal}
+                        icon={<Image source={require("../images/sendreport.png")} />}
+                    />
+                }
                 {/* <TouchableOpacity
                     style={{
                         position: 'absolute',
@@ -868,15 +918,17 @@ export default class RegularUser extends Component {
                     }}>INPUT INCIDENT
                     </Text>
                     <TouchableOpacity
-                            disable={!this.state.image_uri}
-                            onPress={() => {
-                                this.setState({
-                                    isImageViewVisible: true,
-                                });
-                            }}
-                        >
-                    <Image source={{uri:this.state.image_uri}} style={{width:100, height:100,
-                        marginBottom: 15, left: 100}}></Image>
+                        disable={!this.state.image_uri}
+                        onPress={() => {
+                            this.setState({
+                                isImageViewVisible: true,
+                            });
+                        }}
+                    >
+                        <Image source={{ uri: this.state.image_uri }} style={{
+                            width: 100, height: 100,
+                            marginBottom: 15, left: 100
+                        }}></Image>
                     </TouchableOpacity>
                     <RadioGroup radioButtons={this.state.data} onPress={this.onPress} />
                     <TextInput
@@ -890,28 +942,28 @@ export default class RegularUser extends Component {
 
                     />
                     {locationPredictions}
-          <Button
-            style={{ fontSize: 18, color: "white" }}
-            onPress={this.getImage}
-            containerStyle={{
-              padding: 8,
-              marginLeft: 70,
-              marginRight: 70,
-              height: 40,
-              borderRadius: 6,
-              backgroundColor: "mediumseagreen",
-              marginTop: 20
-            }}
-          >
-            <Text style={{ justifyContent: "center", color: "white" }}>
-              Take a Photo
+                    <Button
+                        style={{ fontSize: 18, color: "white" }}
+                        onPress={this.getImage}
+                        containerStyle={{
+                            padding: 8,
+                            marginLeft: 70,
+                            marginRight: 70,
+                            height: 40,
+                            borderRadius: 6,
+                            backgroundColor: "mediumseagreen",
+                            marginTop: 20
+                        }}
+                    >
+                        <Text style={{ justifyContent: "center", color: "white" }}>
+                            Take a Photo
             </Text>
-          </Button>
-         
+                    </Button>
+
                     <Button
                         style={{ fontSize: 18, color: 'white' }}
                         onPress={this.submitIncidentHandler}
-                        disabled={!this.state.destinationPlaceId || !this.state.incidentLocation || !this.state.incidentType} 
+                        disabled={!this.state.destinationPlaceId || !this.state.incidentLocation || !this.state.incidentType}
                         containerStyle={{
                             padding: 8,
                             marginLeft: 70,
@@ -924,17 +976,17 @@ export default class RegularUser extends Component {
                     >
                         <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
                     </Button>
-               
-                <ImageView
-                    glideAlways
-                    style={{flex:1,width:undefined,height:undefined}}
-                    images={images}
-                    imageIndex={imageIndex}
-                    animationType="fade"
-                    isVisible={isImageViewVisible}
-                    renderFooter={this.renderFooter}
-                    onClose={() => this.setState({isImageViewVisible: false})}
-                />
+
+                    <ImageView
+                        glideAlways
+                        style={{ flex: 1, width: undefined, height: undefined }}
+                        images={images}
+                        imageIndex={imageIndex}
+                        animationType="fade"
+                        isVisible={isImageViewVisible}
+                        renderFooter={this.renderFooter}
+                        onClose={() => this.setState({ isImageViewVisible: false })}
+                    />
                 </Modal>
             </View>
         );
@@ -950,7 +1002,7 @@ const styles = StyleSheet.create({
         opacity: 0.0,
         height: Dimensions.get('window').height,
         width: 10,
-      },
+    },
     main: {
         flex: 1,
         padding: 30,
@@ -1019,9 +1071,9 @@ const styles = StyleSheet.create({
         fontSize: 15,
         borderWidth: 0.5
     },
-    centerImage:{
+    centerImage: {
         justifyContent: 'center',
-         alignItems: 'center',
-         flex:1,
+        alignItems: 'center',
+        flex: 1,
     }
 });

@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "D:\\React-Native\\Mobile\\thesisCamera\\android\\app\\build\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values-v24\\values-v24.xml",
+            "outputFile": "C:\\Users\\Lester\\Documents\\thesis react\\Thesis  App React  2.0\\MobileApp\\android\\app\\build\\intermediates\\incremental\\mergeDebugResources\\merged.dir\\values-v24\\values-v24.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\Acer\\.gradle\\caches\\transforms-1\\files-1.1\\support-media-compat-26.1.0.aar\\d6ac4a17912b313a0f7543060d1acc1f\\res\\values-v24\\values-v24.xml",
+                    "source": "C:\\Users\\Lester\\.gradle\\caches\\transforms-1\\files-1.1\\support-media-compat-26.1.0.aar\\43df99de42508ba9758734843abad241\\res\\values-v24\\values-v24.xml",
                     "from": {
                         "startLines": "2,3,4,5",
                         "startColumns": "4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\Acer\\.gradle\\caches\\transforms-1\\files-1.1\\appcompat-v7-28.0.0.aar\\18cf7f095cb4f9d0830d6eb96c5b9735\\res\\values-v24\\values-v24.xml",
+                    "source": "C:\\Users\\Lester\\.gradle\\caches\\transforms-1\\files-1.1\\appcompat-v7-28.0.0.aar\\ca032bc3e68bef8a2329da414d8a0bfe\\res\\values-v24\\values-v24.xml",
                     "from": {
                         "startLines": "2,3",
                         "startColumns": "4,4",

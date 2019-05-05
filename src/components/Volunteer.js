@@ -26,13 +26,13 @@ const TAB_BAR_HEIGHT = 100;
 export default class Volunteer extends Component {
 
     renderContent = () => {
-        const {isImageViewVisible, imageIndex} = this.state;
+        const { isImageViewVisible, imageIndex } = this.state;
         const images = [
-          {
-              source: {
-                  uri:this.state.image_uri
-                  },
-          },
+            {
+                source: {
+                    uri: this.state.image_uri
+                },
+            },
         ];
         return (
             <View>
@@ -52,24 +52,26 @@ export default class Volunteer extends Component {
                     {this.state.incidentLocation}
                 </Text>
                 <TouchableOpacity
-                            onPress={() => {
-                                this.setState({
-                                    isImageViewVisible: true,
-                                });
-                            }}
-                        >
-                    <Image source={{uri:this.state.image_uri}} style={{width:100, height:100,
-                        marginBottom: 15, left: 100}}></Image>
-                    </TouchableOpacity>
+                    onPress={() => {
+                        this.setState({
+                            isImageViewVisible: true,
+                        });
+                    }}
+                >
+                    <Image source={{ uri: this.state.image_uri }} style={{
+                        width: 100, height: 100,
+                        marginBottom: 15, left: 100
+                    }}></Image>
+                </TouchableOpacity>
                 <ImageView
                     glideAlways
-                    style={{flex:1,width:undefined,height:undefined}}
+                    style={{ flex: 1, width: undefined, height: undefined }}
                     images={images}
                     imageIndex={imageIndex}
                     animationType="fade"
                     isVisible={isImageViewVisible}
                     renderFooter={this.renderFooter}
-                    onClose={() => this.setState({isImageViewVisible: false})}
+                    onClose={() => this.setState({ isImageViewVisible: false })}
                 />
             </View>
         )
@@ -86,7 +88,7 @@ export default class Volunteer extends Component {
             incidentID: '',
             userId: '',
             originalVolunteer: false,
-            image_uri:'',
+            image_uri: '',
             userKey: "",
             userType: '',
             incidentType: "",
@@ -94,8 +96,8 @@ export default class Volunteer extends Component {
             firstName: "",
             lastName: "",
             user: null,
-            isImageViewVisible:false, 
-            imageIndex:'',
+            isImageViewVisible: false,
+            imageIndex: '',
             unresponded: true,
             isResponding: false,
             isSettled: false,
@@ -149,7 +151,7 @@ export default class Volunteer extends Component {
         var userType = '';
         var firstName = '';
         var lastName = '';
-
+        var that = this;
         console.log("HI", this.state.userId);
         this.user2 = app.database().ref(`users/${this.state.userId}/`);
         this.user2.on('value', function (snapshot) {
@@ -161,13 +163,12 @@ export default class Volunteer extends Component {
                 firstName = data2.firstName;
                 lastName = data2.lastName;
             }
-
+            that.setState({ userType, firstName, lastName });
         })
-        this.setState({ userType, firstName, lastName });
 
     }
 
-    changeIncidentState = (incidentType, incidentLocation, incidentID, destinationPlaceId, userId,image_uri) => {
+    changeIncidentState = (incidentType, incidentLocation, incidentID, destinationPlaceId, userId, image_uri) => {
         var time = new Date();
         var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
 
@@ -301,13 +302,13 @@ export default class Volunteer extends Component {
                                 { cancelable: false }
                             );
 
-                            that.setState({ originalVolunteer: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri});
+                            that.setState({ originalVolunteer: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri });
 
                         }
                         else if (volunteerResponding === userId && isSettled === false) {
                             console.log("same volunteer");
 
-                            that.setState({ originalVolunteer: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, isSettled: false,image_uri });
+                            that.setState({ originalVolunteer: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, isSettled: false, image_uri });
                             that.getRouteDirection(destinationPlaceId, incidentLocation);
                         }
                         else if (volunteerResponding !== userId && this.isRequestingVolunteers === true && this.state.requestVolunteers === false) {
@@ -322,7 +323,7 @@ export default class Volunteer extends Component {
                                 ],
                                 { cancelable: false }
                             );
-                            that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId,image_uri });
+                            that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
                         }
                         else if (volunteerResponding === userId && isSettled === true) {
                             console.log("same additional volunteer has acceted")
@@ -338,12 +339,12 @@ export default class Volunteer extends Component {
                                 ],
                                 { cancelable: false }
                             );
-                            that.setState({ isIncidentReady: false, isSettled: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID,image_uri });
+                            that.setState({ isIncidentReady: false, isSettled: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri });
 
                         }
                         else if (volunteerResponding !== userId && isRequestingVolunteers === true && this.state.requestVolunteers === true && isSettled === false) {
                             console.log("requested volunteer condition. settled: false");
-                            that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId,image_uri });
+                            that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
                             that.getRouteDirection(destinationPlaceId, incidentLocation);
                         }
                         else if (volunteerResponding !== userId && isRequestingVolunteers === true && this.state.requestVolunteers === true && isSettled === true) {
@@ -396,14 +397,16 @@ export default class Volunteer extends Component {
 
         this.authListener();
 
-        this.watchId = navigator.geolocation.getCurrentPosition(
+        Geolocation.getCurrentPosition(
 
             position => {
                 this.setState({
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude
                 });
-
+                // if (this.state.destinationPlaceId) {
+                //     this.getRouteDirection(this.state.destinationPlaceId, this.state.incidentLocation);
+                // }
                 app.database().ref(`mobileUsers/Volunteer/${this.state.userId}`).update({
                     coordinates: {
                         lng: this.state.longitude,
@@ -416,7 +419,7 @@ export default class Volunteer extends Component {
             { enableHighAccuracy: true }
         );
 
-        this.watchId = navigator.geolocation.watchPosition(
+        this.watchId = Geolocation.watchPosition(
 
             position => {
                 this.setState({
@@ -429,18 +432,21 @@ export default class Volunteer extends Component {
                         lng: this.state.longitude,
                         lat: this.state.latitude
                     },
-                });
+                })
+                    .then(() => {
+                        console.log('Coordinates Updated: ', this.state.longitude, ' ', this.state.latitude);
+                    });
 
             },
             error => this.setState({ error: error.message }),
-            { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
+            { enableHighAccuracy: true, distanceFilter: 1, interval: 4000 }
         );
     }
 
 
     componentWillUnmount() {
         this._isMounted = false;
-        navigator.geolocation.clearWatch(this.watchId);
+        Geolocation.clearWatch(this.watchId);
         this.user2.off();
         this.volunteerListen.off();
         this.userIncidentId.off();
@@ -537,25 +543,25 @@ export default class Volunteer extends Component {
             this.state.longitude
             }&destination=place_id:${destinationPlaceId}&key=${apiKey}`
         )
-        .then((res)=>res.json())
-        .then(json =>{
-            console.log('Data: ',json);
-            const points = PolyLine.decode(json.routes[0].overview_polyline.points);
-            const pointCoords = points.map(point => {
-                return { latitude: point[0], longitude: point[1] };
+            .then((res) => res.json())
+            .then(json => {
+                console.log('Data: ', json);
+                const points = PolyLine.decode(json.routes[0].overview_polyline.points);
+                const pointCoords = points.map(point => {
+                    return { latitude: point[0], longitude: point[1] };
+                });
+                this.setState({
+                    pointCoords,
+                    locationPredictions: [],
+                    incidentLocation: destinationName,
+                    destinationPlaceId,
+                });
+                Keyboard.dismiss();
+                this.map.fitToCoordinates(pointCoords);
+            })
+            .catch((error) => {
+                console.log(error);
             });
-            this.setState({
-                pointCoords,
-                locationPredictions: [],
-                incidentLocation: destinationName,
-                destinationPlaceId,
-            });
-            Keyboard.dismiss();
-            this.map.fitToCoordinates(pointCoords);
-        })
-        .catch((error)=>{
-            console.log(error);
-        });
     }
 
 
@@ -575,7 +581,7 @@ export default class Volunteer extends Component {
                 />
             );
         }
-  
+
 
         let polylinemarker = null;
 
@@ -588,25 +594,43 @@ export default class Volunteer extends Component {
         )
 
 
-
-        const locationPredictions = this.state.locationPredictions.map(
-            prediction => (
-                <TouchableHighlight
-                    key={prediction.id}
-                    onPress={() =>
-                        this.getRouteDirection(
-                            prediction.place_id,
-                            prediction.description
-                        )
+        if (this.state.latitude) {
+            getUserLocation = (
+                <Marker
+                    coordinate={
+                        {
+                            latitude: this.state.latitude,
+                            longitude: this.state.longitude
+                        }
                     }
+                    title={`Hello ${this.state.firstName}`}
+                    description={'You are here'}
                 >
-
-                    <Text style={styles.locationSuggestion}>
-                        {prediction.description}
-                    </Text>
-                </TouchableHighlight>
+                    <Image
+                        source={require("../images/userPosition.png")}
+                        style={{ height: 45, width: 45 }} />
+                </Marker>
             )
-        );
+        }
+
+        // const locationPredictions = this.state.locationPredictions.map(
+        //     prediction => (
+        //         <TouchableHighlight
+        //             key={prediction.id}
+        //             onPress={() =>
+        //                 this.getRouteDirection(
+        //                     prediction.place_id,
+        //                     prediction.description
+        //                 )
+        //             }
+        //         >
+
+        //             <Text style={styles.locationSuggestion}>
+        //                 {prediction.description}
+        //             </Text>
+        //         </TouchableHighlight>
+        //     )
+        // );
 
 
         if (this.state.latitude === null) return null;
@@ -624,9 +648,10 @@ export default class Volunteer extends Component {
                         latitudeDelta: 0.015,
                         longitudeDelta: 0.0121,
                     }}
-                    showsUserLocation={true}
+                // showsUserLocation={true}
 
                 >
+                    {getUserLocation}
                     {this.state.isSettled === false ? polylinemarker : null}
                     {this.state.isSettled === false ? marker : null}
                 </MapView>
@@ -686,7 +711,7 @@ export default class Volunteer extends Component {
                         <Text>
                             Incident Type: {this.state.incidentType}
                             Incident Location: {this.state.incidentLocation}
-                            Photo of Incident: <Image source={{uri:this.state.image_uri}} style={{width:100, height:100}}></Image>
+                            Photo of Incident: <Image source={{ uri: this.state.image_uri }} style={{ width: 100, height: 100 }}></Image>
 
                         </Text>
                     ) : (<Text> No Incident Yet</Text>)
