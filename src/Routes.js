@@ -8,7 +8,6 @@ import Volunteer from './components/Volunteer';
 import RegularUser from './components/RegularUser';
 import Responder from './components/Responder';
 import LoadingScreen from './components/LoadingScreen';
-import Profile from './components/Profile';
 
 export default class Routes extends Component {
 
@@ -22,7 +21,6 @@ export default class Routes extends Component {
                     <Scene key="RegularUser" component={RegularUser} title="RegularUser" />
                     <Scene key="Volunteer" component={Volunteer} title="Volunteer" />
                     <Scene key="Responder" component={Responder} title="Responder" />
-                    <Scene key="Profile" component={Profile} title="Profile" />
                 </Stack>
             </Router>
         )
