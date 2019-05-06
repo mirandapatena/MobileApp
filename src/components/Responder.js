@@ -21,7 +21,7 @@ import AwesomeAlert from 'react-native-awesome-alerts';
 import Button from 'react-native-button'
 import Geolocation from 'react-native-geolocation-service';
 
-
+var us = '';
 var ImagePicker = require('react-native-image-picker');
 var screen = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 100;
@@ -32,7 +32,6 @@ const fs = RNFetchBlob.fs
 window.XMLHttpRequest = RNFetchBlob.polyfill.XMLHttpRequest
 window.Blob = Blob
 
-let userid;
 
 export default class Responder extends Component {
     _isMounted = false;
@@ -108,9 +107,17 @@ export default class Responder extends Component {
 
 
     signOutUser() {
-        console.log("user id", userid);
+        console.log('yo', us);
+        // var adaRef = fire2.database().ref(`mobileUsers/Responder/${us}`);
+        // adaRef.remove().then(function () {
+        //     console.log("Remove succeeded.")
+        // }).catch(function (error) {
+        //     console.log("Remove failed: " + error.message)
+        // });
+        // console.log("SUCCESFULL LOG OUT");
+
         app.auth().signOut().then(function () {
-            console.log("SUCCESFULL LOG OUT");
+            console.log("successfull logout");
         }).catch(function (error) {
             console.log(error)
         });
@@ -122,12 +129,11 @@ export default class Responder extends Component {
         // this._isMounted = true;
         app.auth().onAuthStateChanged(user => {
             if (user) {
-                if (this._isMounted) {
-                    this.setState({ user, userId: user.uid });
-                    userid = this.state.userId;
-                    this.getUserInfo();
-                    this.incidentListener(userId);
-                }
+                this.setState({ user, userId: user.uid });
+                us = user.uid;
+                this.getUserInfo();
+                this.incidentListener(this.state.userId);
+
 
             }
         });
@@ -182,7 +188,6 @@ export default class Responder extends Component {
         var userType = '';
         var firstName = '';
         var lastName = '';
-        var userID = this.state.userId;
         var that = this;
         console.log("HI", this.state.userId);
         this.user2 = app.database().ref(`users/${this.state.userId}/`);
@@ -195,8 +200,15 @@ export default class Responder extends Component {
                 firstName = data2.firstName;
                 lastName = data2.lastName;
             }
-            that.setState({ userType, firstName, lastName, userId: userID });
+            that.setState({ userType, firstName, lastName });
+            app.database().ref(`mobileUsers/Responder/${that.state.userId}`).update({
+                incidentID: '',
+                isAccepted: false,
+                isRejected: false,
+            })
         })
+
+
 
     }
 
@@ -578,12 +590,6 @@ export default class Responder extends Component {
         var coords2 = this.state.pointCoords[coords.length - 1];
         var coordLat = coords2.latitude;
         var coordLng = coords2.longitude;
-
-        app.database().ref(`mobileUsers/Responder/${this.state.userId}`).update({
-            isAccepted: true,
-        })
-
-
         app.database().ref("/incidents").push({
             incidentType: this.state.incidentType,
             incidentLocation: this.state.incidentLocation,
@@ -892,7 +898,7 @@ export default class Responder extends Component {
                             </ActionButton.Item>
                             : this.state.dispatchedResponder === false ? <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocation() }}>
                                 <Icon name="md-create" style={styles.actionButtonIcon} />
-                            </ActionButton.Item> : <ActionButton.Item buttonColor='#9b59b6' title="Arrived (dispatched)" onPress={() => { this.arrivedLocationDispatched() }}>
+                            </ActionButton.Item> : <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocationDispatched() }}>
                                     <Icon name="md-create" style={styles.actionButtonIcon} />
                                 </ActionButton.Item>}
                         <ActionButton.Item buttonColor='#3498db' title="Request Responders" onPress={() => { this.requestAdditionalResponders() }}>

@@ -21,6 +21,8 @@ import ImageView from 'react-native-image-view';
 import Geolocation from 'react-native-geolocation-service';
 import { Actions } from 'react-native-router-flux';
 import Routes from '../Routes';
+
+var us = '';
 var options = {
 };
 const Blob = RNFetchBlob.polyfill.Blob
@@ -136,6 +138,7 @@ export default class RegularUser extends Component {
         app.auth().onAuthStateChanged(user => {
             if (user) {
                 this.setState({ user, userId: user.uid });
+                us = user.uid;
                 this.getUserInfo();
                 this.incidentState(this.state.userId);
             }
@@ -162,6 +165,10 @@ export default class RegularUser extends Component {
             }
             that.setState({ userType, firstName, lastName });
             console.log("USER TYPE", that.state.userType, that.state.firstName, that.state.lastName, that.state.userId)
+
+            app.database().ref(`mobileUsers/Regular User/${that.state.userId}`).update({
+                incidentID: '',
+            })
         })
 
 
@@ -274,49 +281,50 @@ export default class RegularUser extends Component {
         console.log("user bit not state", userId);
         this.regularUserListen = app.database().ref(`mobileUsers/Regular User/${userId}`);
         this.regularUserListen.on('value', function (snapshot) {
+            if (this._isMounted) {
+                var snap = snapshot.val();
+                console.log("user data mobile regular", snap);
+                var incidentID = snap.incidentID;
+                console.log("INCIDENt", incidentID);
 
-            const snap = snapshot.val() || null;
-            console.log("user data mobile regular", snap);
-            var incidentID = snap.incidentID;
-            console.log("INCIDENt", incidentID);
+                if (incidentID !== "") {
+                    console.log("hey i got here");
+                    this.incidentIDListen = app.database().ref(`incidents/${incidentID}`)
+                    this.incidentIDListen.on('value', (snapshot) => {
+                        incidentDetails = snapshot.val() || null;
 
-            if (incidentID !== "") {
-                console.log("hey i got here");
-                this.incidentIDListen = app.database().ref(`incidents/${incidentID}`)
-                this.incidentIDListen.on('value', (snapshot) => {
-                    incidentDetails = snapshot.val() || null;
+                        var markerLat = incidentDetails.coordinates.lat;
+                        var markerLng = incidentDetails.coordinates.lng;
+                        console.log("COORDINATES", markerLat, markerLng);
+                        var reportedBy = incidentDetails.reportedBy
+                        var isSettled = incidentDetails.isSettled;
+                        var incidentType = incidentDetails.incidentType;
+                        var incidentLocation = incidentDetails.incidentLocation
+                        var destinationPlaceId = incidentDetails.destinationPlaceId;
+                        console.log("DESTINATION PLACE", destinationPlaceId);
+                        var incidentLocation = incidentDetails.incidentLocation;
+                        if (reportedBy === userId && isSettled === false) {
 
-                    var markerLat = incidentDetails.coordinates.lat;
-                    var markerLng = incidentDetails.coordinates.lng;
-                    console.log("COORDINATES", markerLat, markerLng);
-                    var reportedBy = incidentDetails.reportedBy
-                    var isSettled = incidentDetails.isSettled;
-                    var incidentType = incidentDetails.incidentType;
-                    var incidentLocation = incidentDetails.incidentLocation
-                    var destinationPlaceId = incidentDetails.destinationPlaceId;
-                    console.log("DESTINATION PLACE", destinationPlaceId);
-                    var incidentLocation = incidentDetails.incidentLocation;
-                    if (reportedBy === userId && isSettled === false) {
-
-                        that.incidentResponderListener(incidentID);
-                        that.incidentVolunteerListener(incidentID);
-                        that.setState({ markerLat, markerLng, isSettled: false, incidentType, incidentLocation, isIncidentReady: true });
-                        that.getRouteDirection(destinationPlaceId, incidentLocation);
+                            that.incidentResponderListener(incidentID);
+                            that.incidentVolunteerListener(incidentID);
+                            that.setState({ markerLat, markerLng, isSettled: false, incidentType, incidentLocation, isIncidentReady: true });
+                            that.getRouteDirection(destinationPlaceId, incidentLocation);
 
 
-                    }
-                    else if (reportedBy === userId && isSettled === true) {
-                        that.incidentSettled(userId, incidentType, incidentLocation);
+                        }
+                        else if (reportedBy === userId && isSettled === true) {
+                            that.incidentSettled(userId, incidentType, incidentLocation);
 
-                    }
-                })
-            }
-            else {
-                console.log("incident Id is not here");
-                // if (that._isMounted) {
-                //     that.setState({ destinationPlaceId: '', incidentLocation: '' });
-                // }
-                console.log("incident is not ready", that.state.isIncidentReady);
+                        }
+                    })
+                }
+                else {
+                    console.log("incident Id is not here");
+                    // if (that._isMounted) {
+                    //     that.setState({ destinationPlaceId: '', incidentLocation: '' });
+                    // }
+                    console.log("incident is not ready", that.state.isIncidentReady);
+                }
             }
         })
     }
@@ -499,7 +507,7 @@ export default class RegularUser extends Component {
             console.log(jsonResult);
         }
         catch (err) {
-            console.error(err)
+            console.log(err)
         }
 
     }
@@ -627,8 +635,18 @@ export default class RegularUser extends Component {
     }
 
     signOutUser() {
+
+        // var adaRef = fire2.database().ref(`mobileUsers/Regular User/${us}`);
+        // adaRef.remove().then(function () {
+        //     console.log("Remove succeeded.")
+        // }).catch(function (error) {
+        //     console.log("Remove failed: " + error.message)
+        // });
+
+
         app.auth().signOut().then(function () {
             // Sign-out successful.
+
             console.log("SUCCESFULL LOG OUT");
 
         }).catch(function (error) {

@@ -35,6 +35,7 @@ export default class App extends Component {
     this.state = {
       user: {},
       userId: "",
+      isVerified: false,
       userType: [],
       userAccount: {
         firstName: '',
@@ -88,23 +89,37 @@ export default class App extends Component {
     });
 
   }
-
   userDetails = () => {
     let userValue = "";
     console.log("userr", this.state.userId);
     app.database().ref(`users/${this.state.userId}`).once("value").then(snapshot => {
       userValue = snapshot.val();
       // console.log("uservalues", userValue);
-      this.setState({ userType: userValue.user_type });
+      console.log("user values", userValue);
+      this.setState({ userType: userValue.user_type, isVerified: userValue.isVerified });
       this.setState({ userAccount: userValue });
-      // this.props.logUser(this.state.userAccount);
-    })
-      .then(() => {
+      if (this.state.isVerified === true) {
         this.rerouteUserAccess();
-      })
-      .catch(err => console.log(err));
+      } else {
+        this.setState({ user: null, userId: null, userAccount: null, isVerified: false, userType: false });
+        console.log("user not verified");
+        Alert.alert(
+          "User is not verified",
+          `Command center must verify user`
+          ,
+          [
+            { text: "Ok", onPress: () => { console.log("ok") } },
+          ],
+          { cancelable: false }
+        );
+
+      }
+
+      // this.props.logUser(this.state.userAccount);
+    }).catch(err => console.log(err));
 
   }
+
 
   rerouteUserAccess = () => {
     // console.log("thisss", this.state.userType);
