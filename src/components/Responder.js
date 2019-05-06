@@ -338,9 +338,9 @@ export default class Responder extends Component {
                                 ],
                                 { cancelable: false }
                             );
-                            if (that._isMounted) {
-                                that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri });
-                            }
+
+                            that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri });
+
                         }
                         else if (responderResponding === userId && isSettled === false) {
                             console.log("same responder");
@@ -462,7 +462,7 @@ export default class Responder extends Component {
 
             },
             error => this.setState({ error: error.message }),
-            { enableHighAccuracy: true, distanceFilter: 1, interval: 4000 }
+            { enableHighAccuracy: true, distanceFilter: 5, interval: 4000 }
         );
     }
 
@@ -667,7 +667,14 @@ export default class Responder extends Component {
             marker = (
                 <Marker
                     coordinate={this.state.pointCoords[this.state.pointCoords.length - 1]}
-                />
+                    title={`${this.state.incidentType}`}
+                    description={this.state.incidentLocation}
+
+                >
+                    <Image
+                        source={require("../images/alert.png")}
+                        style={{ height: 45, width: 45 }} />
+                </Marker>
             );
         }
 

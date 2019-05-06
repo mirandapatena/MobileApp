@@ -439,7 +439,7 @@ export default class Volunteer extends Component {
 
             },
             error => this.setState({ error: error.message }),
-            { enableHighAccuracy: true, distanceFilter: 1, interval: 4000 }
+            { enableHighAccuracy: true, distanceFilter: 5, interval: 4000 }
         );
     }
 
