@@ -234,7 +234,18 @@ export default class Responder extends Component {
         let userId = this.state.userId;
         console.log("is settled?", incidentID, userId);
 
-        this.setState({ isSettled: true })
+
+        this.setState({
+            isSettled: false,
+            dispatchedResponder: false,
+            isIncidentReady: false,
+            originalResponder: false,
+            isRequestingResponders: false,
+            requestResponders: false,
+            incidentId: '',
+            isAccepted: false,
+
+        })
         var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
         responderListen.update({
             incidentID: '',
@@ -259,6 +270,18 @@ export default class Responder extends Component {
         });
     }
 
+    arrivedLocationDispatched = () => {
+        var time = new Date();
+        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+
+        let incidentID = this.state.incidentId;
+        let userId = this.state.userId;
+        console.log("incidentID on arrived Location", incidentID, userId);
+        app.database().ref(`incidents/${incidentID}/additionalDispatched/${userId}`).update({
+            timeArrived: date,
+        });
+    }
+
 
     isRequestingResponders = (incidentId, userId, destinationPlaceId, incidentLocation) => {
         var time = new Date();
@@ -275,6 +298,11 @@ export default class Responder extends Component {
             timeArrived: '',
             timeReceive: date,
         });
+
+        app.database().ref(`mobileUsers/Responder/${userId}`).update({
+            isAccepted: true,
+        });
+
         this.getRouteDirection(destinationPlaceId, incidentLocation);
     }
 
@@ -296,6 +324,29 @@ export default class Responder extends Component {
         app.database().ref(`incidents/${incidentID}`).update({
             isRequestingVolunteers: true,
         });
+    }
+
+    additionalDispatchedResponders = (incidentID, userId, destinationPlaceId, incidentLocation) => {
+        var time = new Date();
+        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+
+        console.log("OTHER DISPATCHED", this.state.userId);
+        this.setState({
+            isIncidentReady: true,
+            dispatchedResponder: true,
+        })
+
+        app.database().ref(`incidents/${incidentID}/additionalDispatched/${userId}`).update({
+            timeArrived: '',
+            timeReceive: date,
+        });
+
+        app.database().ref(`mobileUsers/Responder/${userId}`).update({
+            isAccepted: true,
+        });
+
+        this.getRouteDirection(destinationPlaceId, incidentLocation);
+
     }
 
     incidentListener = (userId) => {
@@ -365,7 +416,17 @@ export default class Responder extends Component {
                         else if (responderResponding === userId && isSettled === true) {
                             console.log("same additional responder has acceted")
                             that.setState({ isIncidentReady: false, isSettled: true, incidentId: incidentID });
-
+                            Alert.alert(
+                                "INCIDENT HAS BEEN SETTLED",
+                                `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                                ,
+                                [
+                                    { text: "Ok", onPress: () => { that.isSettled(); } },
+                                ],
+                                { cancelable: false }
+                            );
                         }
                         else if (responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === true && isSettled === false) {
                             //condition requested responders
@@ -386,6 +447,38 @@ export default class Responder extends Component {
                                 { cancelable: false }
                             );
                         }
+                        else if (responderResponding !== userId && isRequestingResponders === false && this.state.requestResponders === false && isSettled === false) {
+                            if (that.state.dispatchedResponder === false) {
+                                Alert.alert(
+                                    "INCIDENT DETAILS",
+                                    `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                                    ,
+                                    [
+                                        { text: "Respond", onPress: () => { that.additionalDispatchedResponders(incidentID, userId, destinationPlaceId, incidentLocation) } },
+                                    ],
+                                    { cancelable: false }
+                                );
+                                that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                            }
+                            this.getRouteDirection(destinationPlaceId, incidentLocation);
+                        }
+
+                        else if (incidentID && isSettled === true) {
+                            that.setState({ isSettled: true, isIncidentReady: false, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                            Alert.alert(
+                                "INCIDENT HAS BEEN SETTLED",
+                                `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                                ,
+                                [
+                                    { text: "Ok", onPress: () => { that.isSettled(); } },
+                                ],
+                                { cancelable: false }
+                            );
+                        }
                         else {
                             console.log("system is FLAWED")
                         }
@@ -393,9 +486,7 @@ export default class Responder extends Component {
                 }
                 else {
                     console.log("incident Id is not here");
-                    if (that._isMounted) {
-                        that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '' });
-                    }
+                    that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '' });
                     console.log("incident is not ready", that.state.isIncidentReady);
                 }
             }
@@ -770,12 +861,12 @@ export default class Responder extends Component {
 
                 >
                     {getUserLocation}
-                    {this.state.isSettled === false ? polylinemarker : null}
-                    {this.state.isSettled === false ? marker : null}
+                    {this.state.isIncidentReady === true ? polylinemarker : null}
+                    {this.state.isIncidentReady === true ? marker : null}
                 </MapView>
 
 
-                {!this.state.isIncidentReady ? null :
+                {/* {!this.state.isIncidentReady ? null :
 
                     <ActionButton buttonColor="orange" position='left' offsetY={45} offsetX={13}
                         renderIcon={() => (<Icon name="user-plus" style={styles.actionButtonIcon} />)}>
@@ -785,6 +876,35 @@ export default class Responder extends Component {
                         <ActionButton.Item buttonColor='#1abc9c' title="I need more volunteers" onPress={() => { this.requestAdditionalVolunteers() }}>
                             <Image source={require("../images/sendreport.png")} />
                         </ActionButton.Item>
+                    </ActionButton>
+                } */}
+
+                {!this.state.isIncidentReady ?
+                    null :
+
+                    <ActionButton buttonColor="orange" position='left' offsetY={85} offsetX={17}>
+                        {this.state.requestResponders === true ?
+                            <ActionButton.Item buttonColor='#9b59b6' title="Arrived (Requested)" onPress={() => { this.arrivedLocationRequested() }}>
+                                <Icon name="md-create" style={styles.actionButtonIcon} />
+                            </ActionButton.Item>
+                            : this.state.dispatchedResponder === false ? <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocation() }}>
+                                <Icon name="md-create" style={styles.actionButtonIcon} />
+                            </ActionButton.Item> : <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocationDispatched() }}>
+                                    <Icon name="md-create" style={styles.actionButtonIcon} />
+                                </ActionButton.Item>}
+                        <ActionButton.Item buttonColor='#3498db' title="Request Responders" onPress={() => { this.requestAdditionalResponders() }}>
+                            <Icon name="md-notifications-off" style={styles.actionButtonIcon} />
+                        </ActionButton.Item>
+                        <ActionButton.Item buttonColor='#1abc9c' title="Request Volunteers" onPress={() => { this.requestAdditionalVolunteers() }}>
+                            <Image source={require("../images/sendreport.png")} />
+                        </ActionButton.Item>
+                        <ActionButton.Item buttonColor='#1abc9c' title="Incident is Settled" onPress={() => { this.isSettled() }}>
+                            <Icon name="md-done-all" style={styles.actionButtonIcon} />
+                        </ActionButton.Item>
+                        <ActionButton.Item buttonColor='#1abc9c' title="Sign Out" onPress={this.signOutUser}>
+                            <Icon name="md-done-all" style={styles.actionButtonIcon} />
+                        </ActionButton.Item>
+
                     </ActionButton>
                 }
 

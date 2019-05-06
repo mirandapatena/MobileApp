@@ -19,6 +19,8 @@ import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 import PolyLine from '@mapbox/polyline';
 import ImageView from 'react-native-image-view';
 import Geolocation from 'react-native-geolocation-service';
+import { Actions } from 'react-native-router-flux';
+import Routes from '../Routes';
 var options = {
 };
 const Blob = RNFetchBlob.polyfill.Blob
@@ -277,11 +279,7 @@ export default class RegularUser extends Component {
             console.log("user data mobile regular", snap);
             var incidentID = snap.incidentID;
             console.log("INCIDENt", incidentID);
-            // if (incidentID) {
-            //     that.incidentResponderListener(incidentID);
-            //     that.incidentVolunteerListener(incidentID);
-            //     that.setState({ incidentID })
-            // }
+
             if (incidentID !== "") {
                 console.log("hey i got here");
                 this.incidentIDListen = app.database().ref(`incidents/${incidentID}`)
@@ -521,6 +519,12 @@ export default class RegularUser extends Component {
 
     }
 
+
+    ProfileUser = () => {
+        <Routes />
+        Actions.Profile();
+    }
+
     imageBlob(uri, mime = 'application/octet-stream') {
         return new Promise((resolve, reject) => {
             const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri
@@ -678,13 +682,14 @@ export default class RegularUser extends Component {
     renderSideMenu() {
         return (
             <View>
+                <Routes />
                 <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 50 }}>
                     Hello {this.state.firstName}!
                  </Text>
                 <Text style={{ color: 'white', fontWeight: 'normal', fontSize: 15 }}>
                     You are a {this.state.userType}.
                  </Text>
-                <TouchableOpacity onPress={() => { console.log(profileName) }}>
+                <TouchableOpacity onPress={() => { Actions.Profile() }}>
                     <Text style={{ color: 'white', fontSize: 30 }}>
                         Profile
                      </Text>
@@ -1013,8 +1018,7 @@ const styles = StyleSheet.create({
     container: {
         ...StyleSheet.absoluteFillObject,
         flex: 1,
-        // justifyContent: 'center',
-        // alignItems: 'center',
+
     },
     map: {
         ...StyleSheet.absoluteFillObject,

@@ -6,7 +6,7 @@ import {
     TouchableOpacity, Button, Alert, Keyboard
 } from 'react-native';
 import RadioGroup from "react-native-radio-buttons-group";
-import app, { db } from '../config/fire';
+import { fire2 } from '../config/fire';
 import { Formik } from 'formik'
 import * as yup from 'yup'
 
@@ -63,12 +63,53 @@ class Register extends Component {
 
         var email = values.email;
         var password = values.password;
-        const auth = app.auth();
+        const auth = fire2.auth();
         const promise = auth.createUserWithEmailAndPassword(email.trim(), password.trim());
         promise.then(user => {
             Alert.alert(JSON.stringify(`Account ${values.email} has been created`))
             Keyboard.dismiss();
-            let app = db.ref('users/' + user.user.uid);
+            let app = fire2.database().ref('users/' + user.user.uid);
+            let unverified = fire2.database().ref('unverifiedMobileUsers/' + user.user.uid);
+
+            let regularUser = fire2.database().ref('mobileUsers/' + this.state.user_type + '/' + user.user.uid);
+
+            let volunteer = fire2.database().ref('mobileUsers/' + this.state.user_type + '/' + user.user.uid);
+
+            let responder = fire2.database().ref('mobileUsers/' + this.state.user_type + '/' + user.user.uid);
+            if (this.state.user_type === 'Responder') {
+                responder.update({
+                    coordinates: {
+                        lat: 0,
+                        lng: 0,
+                    },
+                    incidentID: "",
+                    isAccepted: false,
+                })
+            }
+            else if (this.state.user_type === 'Regular User') {
+                regularUser.update({
+                    coordinates: {
+                        lat: 0,
+                        lng: 0,
+                    },
+                    incidentID: "",
+                    isAccepted: false,
+                })
+
+            } else {
+                volunteer.update({
+                    coordinates: {
+                        lat: 0,
+                        lng: 0,
+                    },
+                    incidentID: "",
+                    isAccepted: false,
+                })
+            }
+
+            unverified.update({
+                user_type: this.state.user_type,
+            })
 
             app.update({
                 email: values.email,
@@ -79,6 +120,8 @@ class Register extends Component {
                 isMobile: true,
                 user_type: this.state.user_type,
             });
+
+            console.log("Successfully Registered");
 
         }).catch(e => {
             var err = e.message;

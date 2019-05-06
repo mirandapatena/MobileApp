@@ -19,7 +19,7 @@ import { YellowBox } from 'react-native';
 import _ from 'lodash';
 import app from './src/config/fire';
 
-import { Actions, Scene, Router, Stack} from 'react-native-router-flux';
+import { Actions, Scene, Router, Stack } from 'react-native-router-flux';
 
 YellowBox.ignoreWarnings(['Setting a timer']);
 const _console = _.clone(console);
@@ -53,28 +53,28 @@ export default class App extends Component {
     this.askUserGPSPermission();
   }
 
-  askUserGPSPermission = async()=>{
+  askUserGPSPermission = async () => {
     try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         {
-              title: 'Location Persistence',
-              message:
-                'Tabang! application needs access to your location',
-              buttonNegative: 'Cancel',
-              buttonPositive: 'OK',
-          }
-      );
-      if(granted === PermissionsAndroid.RESULTS.GRANTED){
-            console.log('You can user user location');
-        } 
-        else{
-          console.log('Location permission denied');
+          title: 'Location Persistence',
+          message:
+            'Tabang! application needs access to your location',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
         }
-    } 
-    catch(error){
-        console.log(error);
-      } 
+      );
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        console.log('You can user user location');
+      }
+      else {
+        console.log('Location permission denied');
+      }
+    }
+    catch (error) {
+      console.log(error);
+    }
   }
   authListener() {
     app.auth().onAuthStateChanged(user => {
@@ -82,11 +82,11 @@ export default class App extends Component {
         this.setState({ user, userId: user.uid });
         this.userDetails();
       } else {
-        setTimeout(()=>Actions.login(),1500);
+        setTimeout(() => Actions.login(), 1500);
         this.setState({ user: null, userId: null });
       }
     });
-    
+
   }
 
   userDetails = () => {
@@ -99,10 +99,10 @@ export default class App extends Component {
       this.setState({ userAccount: userValue });
       // this.props.logUser(this.state.userAccount);
     })
-    .then(()=>{
-      this.rerouteUserAccess();
-    })
-    .catch(err => console.log(err));
+      .then(() => {
+        this.rerouteUserAccess();
+      })
+      .catch(err => console.log(err));
 
   }
 
@@ -139,12 +139,12 @@ export default class App extends Component {
       <View style={styles.container}>
         <Router>
           <Stack key="root" hideNavBar={true}>
-              <Scene key="loading" component={LoadingScreen} initial={true} title="Loading"/>
-              <Scene key="login" component={Login} title="Login"/>
-              <Scene key="signup" component={Register} title="Register" />
-              <Scene key="RegularUser" component={RegularUser} title="RegularUser" />
-              <Scene key="Volunteer" component={Volunteer} title="Volunteer" />
-              <Scene key="Responder" component={Responder} title="Responder" />
+            <Scene key="loading" component={LoadingScreen} initial={true} title="Loading" />
+            <Scene key="login" component={Login} title="Login" />
+            <Scene key="signup" component={Register} title="Register" />
+            <Scene key="RegularUser" component={RegularUser} title="RegularUser" />
+            <Scene key="Volunteer" component={Volunteer} title="Volunteer" />
+            <Scene key="Responder" component={Responder} title="Responder" />
           </Stack>
         </Router>
       </View>
