@@ -198,15 +198,15 @@ export default class Responder extends Component {
 
     changeIncidentState = (incidentType, incidentLocation, incidentID, destinationPlaceId, userId, image_uri) => {
 
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         app.database().ref(`incidents/${incidentID}`).update({
             isRespondingResponder: true,
             image_uri: this.state.image_uri,
             unrespondedResponder: false,
             responderResponding: this.state.userId,
-            timeReceive: date,
+            timeReceive: date1,
         });
 
         app.database().ref(`mobileUsers/Responder/${userId}`).update({
@@ -217,13 +217,13 @@ export default class Responder extends Component {
 
     arrivedLocation = () => {
         this.setState({ isIncidentReady: false });
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         let incidentID = this.state.incidentId;
         console.log("incidentID on arrived Location", incidentID);
         app.database().ref(`incidents/${incidentID}`).update({
-            timeResponded: date,
+            timeResponded: date1,
         });
     }
 
@@ -259,34 +259,33 @@ export default class Responder extends Component {
 
 
     arrivedLocationRequested = () => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         let incidentID = this.state.incidentId;
         let userId = this.state.userId;
         console.log("incidentID on arrived Location", incidentID, userId);
         app.database().ref(`incidents/${incidentID}/requestResponders/${userId}`).update({
-            timeArrived: date,
+            timeArrived: date1,
         });
     }
 
     arrivedLocationDispatched = () => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         let incidentID = this.state.incidentId;
         let userId = this.state.userId;
         console.log("incidentID on arrived Location", incidentID, userId);
         app.database().ref(`incidents/${incidentID}/additionalDispatched/${userId}`).update({
-            timeArrived: date,
+            timeArrived: date1,
         });
     }
 
 
     isRequestingResponders = (incidentId, userId, destinationPlaceId, incidentLocation) => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
-
+        var date = Date(Date.now());
+        date1 = date.toString();
         console.log("REQUEST", this.state.userId);
         this.setState({
             // isRequestingResponders: true,
@@ -296,7 +295,7 @@ export default class Responder extends Component {
 
         app.database().ref(`incidents/${incidentId}/requestResponders/${userId}`).update({
             timeArrived: '',
-            timeReceive: date,
+            timeReceive: date1,
         });
 
         app.database().ref(`mobileUsers/Responder/${userId}`).update({
@@ -327,8 +326,8 @@ export default class Responder extends Component {
     }
 
     additionalDispatchedResponders = (incidentID, userId, destinationPlaceId, incidentLocation) => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         console.log("OTHER DISPATCHED", this.state.userId);
         this.setState({
@@ -338,7 +337,7 @@ export default class Responder extends Component {
 
         app.database().ref(`incidents/${incidentID}/additionalDispatched/${userId}`).update({
             timeArrived: '',
-            timeReceive: date,
+            timeReceive: date1,
         });
 
         app.database().ref(`mobileUsers/Responder/${userId}`).update({
@@ -568,9 +567,8 @@ export default class Responder extends Component {
 
 
     submitIncidentHandler = () => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
-
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         var coords = this.state.pointCoords;
         var coords2 = this.state.pointCoords[coords.length - 1];
@@ -585,7 +583,7 @@ export default class Responder extends Component {
             incidentPhoto: '',
             reportedBy: this.state.userId,
             image_uri: this.state.image_uri,
-            timeReceive: date,
+            timeReceive: date1,
             timeResponded: '',
             responderResponding: this.state.userId,
             volunteerResponding: '',
@@ -727,11 +725,6 @@ export default class Responder extends Component {
                 <Text style={{ color: 'white', fontWeight: 'normal', fontSize: 15 }}>
                     You are a {this.state.userType}.
                  </Text>
-                <TouchableOpacity onPress={() => { console.log(profileName) }}>
-                    <Text style={{ color: 'white', fontSize: 30 }}>
-                        Profile
-                     </Text>
-                </TouchableOpacity>
                 <TouchableOpacity disabled={this.state.isIncidentReady} onPress={this.signOutUser}>
                     <Text style={{ color: 'white', fontSize: 30 }}>
                         Log Out

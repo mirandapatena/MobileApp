@@ -520,10 +520,6 @@ export default class RegularUser extends Component {
     }
 
 
-    ProfileUser = () => {
-        <Routes />
-        Actions.Profile();
-    }
 
     imageBlob(uri, mime = 'application/octet-stream') {
         return new Promise((resolve, reject) => {
@@ -555,9 +551,8 @@ export default class RegularUser extends Component {
 
 
     submitIncidentHandler = () => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
-
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         var coords = this.state.pointCoords;
         var coords2 = this.state.pointCoords[coords.length - 1];
@@ -571,7 +566,7 @@ export default class RegularUser extends Component {
             isSettled: false,
             incidentPhoto: '',
             reportedBy: this.state.userId,
-            timeReceive: date,
+            timeReceive: date1,
             timeResponded: '',
             image_uri: this.state.image_uri,
             responderResponding: '',
@@ -689,11 +684,6 @@ export default class RegularUser extends Component {
                 <Text style={{ color: 'white', fontWeight: 'normal', fontSize: 15 }}>
                     You are a {this.state.userType}.
                  </Text>
-                <TouchableOpacity onPress={() => { Actions.Profile() }}>
-                    <Text style={{ color: 'white', fontSize: 30 }}>
-                        Profile
-                     </Text>
-                </TouchableOpacity>
                 <TouchableOpacity onPress={this.signOutUser}>
                     <Text style={{ color: 'white', fontSize: 30 }}>
                         Log Out

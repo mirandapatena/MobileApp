@@ -169,15 +169,15 @@ export default class Volunteer extends Component {
     }
 
     changeIncidentState = (incidentType, incidentLocation, incidentID, destinationPlaceId, userId, image_uri) => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         app.database().ref(`incidents/${incidentID}`).update({
             isRespondingVolunteer: true,
             image_uri: this.state.image_uri,
             unrespondedVolunteer: false,
             volunteerResponding: this.state.userId,
-            timeReceiveVolunteer: date
+            timeReceiveVolunteer: date1
         });
 
         app.database().ref(`mobileUsers/Volunteer/${this.state.userId}`).update({
@@ -188,13 +188,13 @@ export default class Volunteer extends Component {
 
     arrivedLocation = () => {
         this.setState({ isIncidentReady: false });
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         let incidentID = this.state.incidentId;
         console.log("incidentID on arrived Location", incidentID);
         app.database().ref(`incidents/${incidentID}`).update({
-            timeVolunteerResponded: date
+            timeVolunteerResponded: date1
         });
     }
 
@@ -222,20 +222,18 @@ export default class Volunteer extends Component {
 
 
     arrivedLocationRequested = () => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         let incidentID = this.state.incidentId;
         let userId = this.state.userId;
         console.log("incidentID on arrived Location", incidentID, userId);
         app.database().ref(`incidents/${incidentID}/requestVolunteers/${userId}`).update({
-            timeArrived: date,
+            timeArrived: date1,
         });
     }
 
     isRejected = () => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
 
         let incidentID = this.state.incidentId;
         let userId = this.state.userId;
@@ -249,8 +247,8 @@ export default class Volunteer extends Component {
 
 
     isRequestingVolunteers = (incidentId, userId, destinationPlaceId, incidentLocation) => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         console.log("REQUEST", this.state.userId);
         this.setState({
@@ -262,7 +260,7 @@ export default class Volunteer extends Component {
         app.database().ref(`incidents/${incidentId}/requestVolunteers/${userId}`).update({
 
             timeArrived: '',
-            timeReceive: date,
+            timeReceive: date1,
         });
 
         app.database().ref(`mobileUsers/Volunteer/${userId}`).update({
@@ -475,9 +473,8 @@ export default class Volunteer extends Component {
 
 
     submitIncidentHandler = () => {
-        var time = new Date();
-        var date = time.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
-
+        var date = Date(Date.now());
+        date1 = date.toString();
 
         var coords = this.state.pointCoords;
         var coords2 = this.state.pointCoords[coords.length - 1];
@@ -491,7 +488,7 @@ export default class Volunteer extends Component {
             isSettled: false,
             incidentPhoto: '',
             reportedBy: this.state.userId,
-            timeReceive: date,
+            timeReceive: date1,
             timeResponded: '',
             responderResponding: this.state.userId,
             volunteerResponding: '',
