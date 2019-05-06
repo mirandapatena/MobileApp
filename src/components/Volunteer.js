@@ -15,7 +15,7 @@ import 'es6-symbol';
 import app from '../config/fire';
 import apiKey from '../config/apiKey';
 import _ from 'lodash';
-
+import Geolocation from 'react-native-geolocation-service';
 import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 
 import PolyLine from '@mapbox/polyline';
