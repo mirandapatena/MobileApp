@@ -166,9 +166,9 @@ export default class RegularUser extends Component {
             that.setState({ userType, firstName, lastName });
             console.log("USER TYPE", that.state.userType, that.state.firstName, that.state.lastName, that.state.userId)
 
-            app.database().ref(`mobileUsers/Regular User/${that.state.userId}`).update({
-                incidentID: '',
-            })
+            // app.database().ref(`mobileUsers/Regular User/${that.state.userId}`).update({
+            //     incidentID: '',
+            // })
         })
 
 
@@ -229,14 +229,14 @@ export default class RegularUser extends Component {
 
 
 
-    responderCoordinates = () => {
+    responderCoordinates = (responderRespondingID) => {
 
         console.log("Welcome RESPONDER", this.state.responderRespondingID);
-        this.userIncidentId = app.database().ref(`mobileUsers/Responder/${this.state.responderRespondingID}`)
+        this.userIncidentId = app.database().ref(`mobileUsers/Responder/${responderRespondingID}`)
         var latitude = '';
         var longitude = '';
         var that = this;
-        if (this.state.responderRespondingID) {
+        if (responderRespondingID) {
             this.userIncidentId.on('value', function (snapshot) {
                 incidentDetails = snapshot.val() || null;
                 latitude = incidentDetails.coordinates.lat;
@@ -250,14 +250,14 @@ export default class RegularUser extends Component {
         }
     }
 
-    volunteerCoordinates = () => {
+    volunteerCoordinates = (volunteerRespondingID) => {
 
         console.log("Welcome Volunteer", this.state.volunteerRespondingID);
-        var userIncidentId = app.database().ref(`mobileUsers/Volunteer/${this.state.volunteerRespondingID}`)
+        var userIncidentId = app.database().ref(`mobileUsers/Volunteer/${volunteerRespondingID}`)
         var latitude = '';
         var longitude = '';
         var that = this;
-        if (this.state.volunteerRespondingID) {
+        if (volunteerRespondingID) {
             userIncidentId.on('value', function (snapshot) {
                 incidentDetails = snapshot.val() || null;
                 latitude = incidentDetails.coordinates.lat;
@@ -281,65 +281,60 @@ export default class RegularUser extends Component {
         console.log("user bit not state", userId);
         this.regularUserListen = app.database().ref(`mobileUsers/Regular User/${userId}`);
         this.regularUserListen.on('value', function (snapshot) {
-            if (this._isMounted) {
-                var snap = snapshot.val();
-                console.log("user data mobile regular", snap);
-                var incidentID = snap.incidentID;
-                console.log("INCIDENt", incidentID);
 
-                if (incidentID !== "") {
-                    console.log("hey i got here");
-                    this.incidentIDListen = app.database().ref(`incidents/${incidentID}`)
-                    this.incidentIDListen.on('value', (snapshot) => {
-                        incidentDetails = snapshot.val() || null;
+            var snap = snapshot.val();
+            console.log("user data mobile regular", snap);
+            var incidentID = snap.incidentID;
+            console.log("INCIDENt", incidentID);
 
-                        var markerLat = incidentDetails.coordinates.lat;
-                        var markerLng = incidentDetails.coordinates.lng;
-                        console.log("COORDINATES", markerLat, markerLng);
-                        var reportedBy = incidentDetails.reportedBy
-                        var isSettled = incidentDetails.isSettled;
-                        var incidentType = incidentDetails.incidentType;
-                        var incidentLocation = incidentDetails.incidentLocation
-                        var destinationPlaceId = incidentDetails.destinationPlaceId;
-                        console.log("DESTINATION PLACE", destinationPlaceId);
-                        var incidentLocation = incidentDetails.incidentLocation;
-                        if (reportedBy === userId && isSettled === false) {
+            if (incidentID !== "") {
+                console.log("hey i got here");
+                this.incidentIDListen = app.database().ref(`incidents/${incidentID}`)
+                this.incidentIDListen.on('value', (snapshot) => {
+                    incidentDetails = snapshot.val() || null;
 
-                            that.incidentResponderListener(incidentID);
-                            that.incidentVolunteerListener(incidentID);
-                            that.setState({ markerLat, markerLng, isSettled: false, incidentType, incidentLocation, isIncidentReady: true });
-                            that.getRouteDirection(destinationPlaceId, incidentLocation);
+                    var markerLat = incidentDetails.coordinates.lat;
+                    var markerLng = incidentDetails.coordinates.lng;
+                    console.log("COORDINATES", markerLat, markerLng);
+                    var reportedBy = incidentDetails.reportedBy
+                    var isSettled = incidentDetails.isSettled;
+                    var incidentType = incidentDetails.incidentType;
+                    var incidentLocation = incidentDetails.incidentLocation
+                    var destinationPlaceId = incidentDetails.destinationPlaceId;
+                    console.log("DESTINATION PLACE", destinationPlaceId);
+                    var incidentLocation = incidentDetails.incidentLocation;
+                    if (reportedBy === userId && isSettled === false) {
+
+                        that.incidentResponderListener(incidentID);
+                        that.incidentVolunteerListener(incidentID);
+                        that.setState({ markerLat, markerLng, isSettled: false, incidentType, incidentLocation, isIncidentReady: true });
+                        that.getRouteDirection(destinationPlaceId, incidentLocation);
 
 
-                        }
-                        else if (reportedBy === userId && isSettled === true) {
-                            that.incidentSettled(userId, incidentType, incidentLocation);
+                    }
+                    else if (reportedBy === userId && isSettled === true) {
+                        that.incidentSettled();
 
-                        }
-                    })
-                }
-                else {
-                    console.log("incident Id is not here");
-                    // if (that._isMounted) {
-                    //     that.setState({ destinationPlaceId: '', incidentLocation: '' });
-                    // }
-                    console.log("incident is not ready", that.state.isIncidentReady);
-                }
+                    }
+                })
             }
+            else {
+                console.log("incident Id is not here");
+                console.log("incident is not ready", that.state.isIncidentReady);
+            }
+
         })
     }
 
-    incidentSettled = (userId, incidentType, incidentLocation) => {
+    incidentSettled = () => {
 
 
-        this.setState({ isSettled: true, isIncidentReady: false })
+        this.setState({ isSettled: true, isIncidentReady: false, hasResponderAlerted: false })
         this.setState({ markerCoords: null });
 
         Alert.alert(
             "INCIDENT HAS BEEN RESPONDED!! ",
-            `Incident Type: ${incidentType}
-                             Incident Location: ${incidentLocation}
-                                                     `
+            `Thank you for reporting!  `
             ,
             [
                 { text: "Ok", onPress: () => { console.log("ok") } },
@@ -347,16 +342,16 @@ export default class RegularUser extends Component {
             { cancelable: false }
         );
 
-        var responderListen = app.database().ref(`mobileUsers/Regular User/${userId}`)
-        responderListen.update({
+        var regularListen = app.database().ref(`mobileUsers/Regular User/${this.state.userId}`)
+        regularListen.update({
             incidentID: '',
         })
 
     }
 
     hasResponderAlert = () => {
-        var hasResponderAlerted = true;
-        this.setState({ hasResponderAlerted });
+
+        this.setState({ hasResponderAlerted: true });
         console.log("ALERT HAS BEEN TRIGGERED");
     }
 
@@ -366,7 +361,7 @@ export default class RegularUser extends Component {
         this.responderListen = app.database().ref(`incidents/${incidentID}`)
         var that = this;
         var responderRespondingID = '';
-        var hasResponderAlerted = this.state.hasResponderAlerted;
+        // var hasResponderAlerted = this.state.hasResponderAlerted;
 
         this.responderListen.on('value', function (snapshot) {
             const data2 = snapshot.val() || null;
@@ -376,7 +371,7 @@ export default class RegularUser extends Component {
                 responderRespondingID = data2.responderResponding;
                 // var destinationPlaceId = data2.destinationPlaceId;
                 if (responderRespondingID) {
-                    if (hasResponderAlerted === false) {
+                    if (that.state.hasResponderAlerted === false) {
                         Alert.alert(
                             "A Responder has accepted an incident "
                             , `Responder is on the way!`,
@@ -391,7 +386,7 @@ export default class RegularUser extends Component {
                         );
                     }
                     console.log("responder responding", responderRespondingID);
-                    that.setState({ responderRespondingID });
+                    // that.setState({ responderRespondingID });
                     that.responderCoordinates(responderRespondingID)
                 }
                 else {
@@ -439,7 +434,7 @@ export default class RegularUser extends Component {
 
                     }
                     console.log("volunteer responding", volunteerRespondingID);
-                    that.setState({ volunteerRespondingID });
+                    // that.setState({ volunteerRespondingID });
                     that.volunteerCoordinates(volunteerRespondingID)
                 } else {
                     console.log("volunteer responding", volunteerRespondingID);

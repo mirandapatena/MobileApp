@@ -1,51 +1,45 @@
 
+
 import React, { Component } from "react";
-import { Platform, Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
+import {
+    Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert,
+    DrawerLayoutAndroid
+} from "react-native";
 import Modal from 'react-native-modal';
 import ActionButton, { ActionButtonItem } from 'react-native-action-button';
 import AwesomeButton from 'react-native-really-awesome-button';
-import Drawer from 'react-native-circle-drawer';
+import Drawer from 'react-native-circle-drawer'
+import Button from 'react-native-button'
 import BottomDrawer from 'rn-bottom-drawer';
 import RadioGroup from 'react-native-radio-buttons-group';
 import Icon from 'react-native-vector-icons/FontAwesome';
+
 import 'babel-polyfill';
 import 'es6-symbol';
+
 import app from '../config/fire';
 import apiKey from '../config/apiKey';
 import _ from 'lodash';
-import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
-import PolyLine from '@mapbox/polyline';
-import RNFetchBlob from 'react-native-fetch-blob'
-import ImageView from 'react-native-image-view';
-import AwesomeAlert from 'react-native-awesome-alerts';
-import Button from 'react-native-button'
-import Geolocation from 'react-native-geolocation-service';
 
-var us = '';
-var ImagePicker = require('react-native-image-picker');
+import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
+import Geolocation from 'react-native-geolocation-service';
+import PolyLine from '@mapbox/polyline';
 var screen = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 100;
-var options = {
-};
-const Blob = RNFetchBlob.polyfill.Blob
-const fs = RNFetchBlob.fs
-window.XMLHttpRequest = RNFetchBlob.polyfill.XMLHttpRequest
-window.Blob = Blob
+var profileName = 'LOL';
 
 
 export default class Responder extends Component {
     _isMounted = false;
     constructor(props) {
         super(props);
-        this.getImage = this.getImage.bind(this)
         this.state = {
             isModalVisible: false,
             isAccepted: false,
             isIncidentReady: false,
             destinationPlaceId: '',
-            image_uri: '',
-            dispatchedResponder: false,
             isRequestingResponders: '',
+            dispatchedResponder: false,
             incidentID: '',
             userId: '',
             originalResponder: false,
@@ -55,12 +49,10 @@ export default class Responder extends Component {
             incidentLocation: "",
             firstName: "",
             lastName: "",
-            isImageViewVisible: false,
             user: null,
             unresponded: true,
             isResponding: false,
             isSettled: false,
-            showAlert: false,
             incidentPhoto: '',
             reportedBy: '',
             timeReceive: '',
@@ -72,7 +64,6 @@ export default class Responder extends Component {
                 lng: null,
                 lat: null
             },
-            uploading: null,
             pointCoords: [],
             error: "",
             latitude: null,
@@ -107,17 +98,8 @@ export default class Responder extends Component {
 
 
     signOutUser() {
-        console.log('yo', us);
-        // var adaRef = fire2.database().ref(`mobileUsers/Responder/${us}`);
-        // adaRef.remove().then(function () {
-        //     console.log("Remove succeeded.")
-        // }).catch(function (error) {
-        //     console.log("Remove failed: " + error.message)
-        // });
-        // console.log("SUCCESFULL LOG OUT");
-
         app.auth().signOut().then(function () {
-            console.log("successfull logout");
+            console.log("SUCCESFULL LOG OUT");
         }).catch(function (error) {
             console.log(error)
         });
@@ -130,58 +112,12 @@ export default class Responder extends Component {
         app.auth().onAuthStateChanged(user => {
             if (user) {
                 this.setState({ user, userId: user.uid });
-                us = user.uid;
+                var userId = this.state.userId
                 this.getUserInfo();
-                this.incidentListener(this.state.userId);
-
+                this.incidentListener(userId);
 
             }
         });
-    }
-
-    getImage() {
-
-        ImagePicker.launchCamera(options, (response) => {
-
-
-            this.imageBlob(response.uri)
-                .then(alert('Uploading Please Wait!'), this.setState({ uploading: true }), console.log(this.state.uploading))
-                .then(url => { alert('Photo has been Uploaded'); this.setState({ image_uri: url, uploading: false }); console.log(this.state.uploading) })
-                .catch(error => console.log(error))
-
-        }
-        )
-    };
-
-
-    imageBlob(uri, mime = 'application/octet-stream') {
-        return new Promise((resolve, reject) => {
-            const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri
-            let uploadBlob = null
-            const imageRef = app.storage().ref(`/reports/Responders/${currentUser.uid}`)
-
-            fs.readFile(uploadUri, 'base64')
-                .then((data) => {
-                    return Blob.build(data, { type: `${mime};BASE64` })
-                })
-                .then((blob) => {
-                    uploadBlob = blob
-                    return imageRef.put(blob, { contentType: mime })
-                })
-                .then(() => {
-                    uploadBlob.close()
-                    return imageRef.getDownloadURL()
-
-                })
-                .then((url) => {
-                    resolve(url)
-                    console.log(url)
-                    console.log(imageRef.getDownloadURL())
-                })
-                .catch((error) => {
-                    reject(error)
-                })
-        })
     }
 
     getUserInfo = () => {
@@ -200,56 +136,55 @@ export default class Responder extends Component {
                 firstName = data2.firstName;
                 lastName = data2.lastName;
             }
+
             that.setState({ userType, firstName, lastName });
             app.database().ref(`mobileUsers/Responder/${that.state.userId}`).update({
                 incidentID: '',
                 isAccepted: false,
-                isRejected: false,
             })
-        })
 
+        })
 
 
     }
 
-    changeIncidentState = (incidentType, incidentLocation, incidentID, destinationPlaceId, userId, image_uri) => {
+    changeIncidentState = (incidentType, incidentLocation, incidentID, destinationPlaceId, userId) => {
 
-        var date = Date(Date.now());
-        date1 = date.toString();
+        var time = Date(Date.now());
+        date = time.toString();
+
 
         app.database().ref(`incidents/${incidentID}`).update({
             isRespondingResponder: true,
-            image_uri: this.state.image_uri,
             unrespondedResponder: false,
             responderResponding: this.state.userId,
-            timeReceive: date1,
+            timeReceive: date,
         });
 
         app.database().ref(`mobileUsers/Responder/${userId}`).update({
             isAccepted: true,
+
         })
         this.getRouteDirection(destinationPlaceId, incidentLocation);
     }
 
     arrivedLocation = () => {
         this.setState({ isIncidentReady: false });
-        var date = Date(Date.now());
-        date1 = date.toString();
+        var time = Date(Date.now());
+        date = time.toString();
 
         let incidentID = this.state.incidentId;
         console.log("incidentID on arrived Location", incidentID);
         app.database().ref(`incidents/${incidentID}`).update({
-            timeResponded: date1,
+            timeResponderResponded: date,
         });
     }
 
-
-    isSettled = () => {
+    clearSettled = () => {
 
         let incidentID = this.state.incidentId;
         let userId = this.state.userId;
         console.log("is settled?", incidentID, userId);
-
 
         this.setState({
             isSettled: false,
@@ -258,7 +193,31 @@ export default class Responder extends Component {
             originalResponder: false,
             isRequestingResponders: false,
             requestResponders: false,
-            incidentId: '',
+            incidentId: "",
+            isAccepted: false,
+
+        })
+        var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
+        responderListen.update({
+            incidentID: '',
+            isAccepted: false,
+        })
+    }
+
+    isSettled = () => {
+
+        let incidentID = this.state.incidentId;
+        let userId = this.state.userId;
+        console.log("is settled?", incidentID, userId);
+
+        this.setState({
+            isSettled: false,
+            dispatchedResponder: false,
+            isIncidentReady: false,
+            originalResponder: false,
+            isRequestingResponders: false,
+            requestResponders: false,
+            incidentId: "",
             isAccepted: false,
 
         })
@@ -275,33 +234,35 @@ export default class Responder extends Component {
 
 
     arrivedLocationRequested = () => {
-        var date = Date(Date.now());
-        date1 = date.toString();
+        var time = Date(Date.now());
+        date = time.toString();
+
 
         let incidentID = this.state.incidentId;
         let userId = this.state.userId;
         console.log("incidentID on arrived Location", incidentID, userId);
         app.database().ref(`incidents/${incidentID}/requestResponders/${userId}`).update({
-            timeArrived: date1,
+            timeArrived: date,
         });
     }
 
     arrivedLocationDispatched = () => {
-        var date = Date(Date.now());
-        date1 = date.toString();
+        var time = Date(Date.now());
+        date = time.toString();
 
         let incidentID = this.state.incidentId;
         let userId = this.state.userId;
         console.log("incidentID on arrived Location", incidentID, userId);
         app.database().ref(`incidents/${incidentID}/additionalDispatched/${userId}`).update({
-            timeArrived: date1,
+            timeArrived: date,
         });
     }
 
-
     isRequestingResponders = (incidentId, userId, destinationPlaceId, incidentLocation) => {
-        var date = Date(Date.now());
-        date1 = date.toString();
+        var time = Date(Date.now());
+        date = time.toString();
+
+
         console.log("REQUEST", this.state.userId);
         this.setState({
             // isRequestingResponders: true,
@@ -311,13 +272,12 @@ export default class Responder extends Component {
 
         app.database().ref(`incidents/${incidentId}/requestResponders/${userId}`).update({
             timeArrived: '',
-            timeReceive: date1,
+            timeReceive: date,
         });
 
         app.database().ref(`mobileUsers/Responder/${userId}`).update({
             isAccepted: true,
         });
-
         this.getRouteDirection(destinationPlaceId, incidentLocation);
     }
 
@@ -342,8 +302,9 @@ export default class Responder extends Component {
     }
 
     additionalDispatchedResponders = (incidentID, userId, destinationPlaceId, incidentLocation) => {
-        var date = Date(Date.now());
-        date1 = date.toString();
+        var time = Date(Date.now());
+        date = time.toString();
+
 
         console.log("OTHER DISPATCHED", this.state.userId);
         this.setState({
@@ -353,7 +314,7 @@ export default class Responder extends Component {
 
         app.database().ref(`incidents/${incidentID}/additionalDispatched/${userId}`).update({
             timeArrived: '',
-            timeReceive: date1,
+            timeReceive: date,
         });
 
         app.database().ref(`mobileUsers/Responder/${userId}`).update({
@@ -373,138 +334,149 @@ export default class Responder extends Component {
 
 
         this.responderListen.on('value', (snapshot) => {
-            if (this._isMounted) {
-                userId = this.state.userId;
-                var data = snapshot.val();
-                var incidentID = data.incidentID;
-                console.log("incident ID", incidentID);
 
-                if (incidentID !== "") {
-                    console.log("hey i got here");
-                    this.userIncidentId = app.database().ref(`incidents/${incidentID}`)
-                    this.userIncidentId.on('value', (snapshot) => {
-                        incidentDetails = snapshot.val() || null;
-                        var incidentType = incidentDetails.incidentType;
-                        var image_uri = incidentDetails.image_uri;
-                        var incidentLocation = incidentDetails.incidentLocation;
-                        var destinationPlaceId = incidentDetails.destinationPlaceId;
-                        var responderResponding = incidentDetails.responderResponding;
-                        var isSettled = incidentDetails.isSettled;
-                        var isRequestingResponders = incidentDetails.isRequestingResponders;
+            userId = this.state.userId;
+            var data = snapshot.val();
+            var incidentID = data.incidentID;
+            console.log("incident ID", incidentID);
 
-                        if (incidentID && responderResponding === "" && isSettled === false) {
+            if (incidentID !== "") {
+                console.log("hey i got here");
+                this.userIncidentId = app.database().ref(`incidents/${incidentID}`);
+                app.database().ref(`mobileUsers/Responder/${that.state.userId}`).update({
+                    incidentID: incidentID,
+                })
+                this.userIncidentId.on('value', (snapshot) => {
+                    incidentDetails = snapshot.val() || null;
+                    var incidentType = incidentDetails.incidentType;
+                    var incidentLocation = incidentDetails.incidentLocation;
+                    var destinationPlaceId = incidentDetails.destinationPlaceId;
+                    var responderResponding = incidentDetails.responderResponding;
+                    var isSettled = incidentDetails.isSettled;
+                    var isRequestingResponders = incidentDetails.isRequestingResponders;
+
+
+                    if (incidentID !== "" && responderResponding === "" && isSettled === false) {
+                        console.log("ARGUMENT 1");
+                        Alert.alert(
+                            "INCIDENT DETAILS ",
+                            `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                            ,
+                            [
+                                { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentID, destinationPlaceId, userId) } },
+                            ],
+                            { cancelable: false }
+                        );
+                        that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID });
+                    }
+                    else if (incidentID !== "" && responderResponding === userId && isSettled === false) {
+                        console.log("ARGUMENT 2");
+                        console.log("same responder");
+
+                        that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, isSettled: false });
+                        that.getRouteDirection(destinationPlaceId, incidentLocation);
+                    }
+                    else if (incidentID !== "" && responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === false && isSettled === false) {
+
+                        console.log("ARGUMENT 3");
+                        Alert.alert(
+                            "REQUESTING ADDITIONAL RESPONDER ",
+                            `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                            ,
+                            [
+                                { text: "Respond", onPress: () => { that.isRequestingResponders(incidentID, userId, destinationPlaceId, incidentLocation) } },
+                            ],
+                            { cancelable: false }
+                        );
+                        that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                    }
+                    else if (incidentID !== "" && responderResponding === userId && isSettled === true) {
+                        console.log("ARGUMENT 4");
+                        console.log("same additional responder has acceted")
+                        that.setState({ isIncidentReady: false, isSettled: true, incidentId: incidentID });
+                        Alert.alert(
+                            "INCIDENT HAS BEEN SETTLED",
+                            `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                            ,
+                            [
+                                { text: "Ok", onPress: () => { that.clearSettled() } },
+                            ],
+                            { cancelable: false }
+                        );
+
+                    }
+                    else if (incidentID !== "" && responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === true && isSettled === false) {
+                        //condition requested responders
+                        console.log("ARGUMENT 5");
+                        that.setState({ isSettled: false, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                        that.getRouteDirection(destinationPlaceId, incidentLocation);
+                    }
+                    else if (incidentID !== "" && responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === true && isSettled === true) {
+                        console.log("ARGUMENT 6");
+                        that.setState({ isSettled: true, isIncidentReady: false, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                        Alert.alert(
+                            "INCIDENT HAS BEEN SETTLED",
+                            `Incident Type: ${incidentType}
+                                                 Incident Location: ${incidentLocation}
+                                                                         `
+                            ,
+                            [
+                                { text: "Ok", onPress: () => { that.clearSettled() } },
+                            ],
+                            { cancelable: false }
+                        );
+                    }
+                    else if (incidentID !== "" && responderResponding !== userId && isRequestingResponders === false && this.state.requestResponders === false && isSettled === false) {
+                        console.log("ARGUMENT 7");
+                        if (that.state.dispatchedResponder === false) {
                             Alert.alert(
-                                "INCIDENT DETAILS ",
+                                "INCIDENT DETAILS",
                                 `Incident Type: ${incidentType}
                                                  Incident Location: ${incidentLocation}
                                                                          `
                                 ,
                                 [
-                                    { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentID, destinationPlaceId, userId, image_uri) } },
+                                    { text: "Respond", onPress: () => { that.additionalDispatchedResponders(incidentID, userId, destinationPlaceId, incidentLocation) } },
                                 ],
                                 { cancelable: false }
                             );
+                            that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                        }
+                        this.getRouteDirection(destinationPlaceId, incidentLocation);
+                    }
 
-                            that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri });
-
-                        }
-                        else if (responderResponding === userId && isSettled === false) {
-                            console.log("same responder");
-
-                            that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, isSettled: false, image_uri });
-                            that.getRouteDirection(destinationPlaceId, incidentLocation);
-                        }
-                        else if (responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === false) {
-                            Alert.alert(
-                                "REQUESTING ADDITIONAL RESPONDER ",
-                                `Incident Type: ${incidentType}
+                    else if (incidentID !== "" && isSettled === true) {
+                        console.log("ARGUMENT 8");
+                        that.setState({ isSettled: true, isIncidentReady: false, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                        Alert.alert(
+                            "INCIDENT HAS BEEN SETTLED",
+                            `Incident Type: ${incidentType}
                                                  Incident Location: ${incidentLocation}
                                                                          `
-                                ,
-                                [
-                                    { text: "Respond", onPress: () => { that.isRequestingResponders(image_uri, incidentID, userId, destinationPlaceId, incidentLocation) } },
-                                ],
-                                { cancelable: false }
-                            );
-                            that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
-                        }
-                        else if (responderResponding === userId && isSettled === true) {
-                            console.log("same additional responder has acceted")
-                            that.setState({ isIncidentReady: false, isSettled: true, incidentId: incidentID });
-                            Alert.alert(
-                                "INCIDENT HAS BEEN SETTLED",
-                                `Incident Type: ${incidentType}
-                                                 Incident Location: ${incidentLocation}
-                                                                         `
-                                ,
-                                [
-                                    { text: "Ok", onPress: () => { that.isSettled(); } },
-                                ],
-                                { cancelable: false }
-                            );
-                        }
-                        else if (responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === true && isSettled === false) {
-                            //condition requested responders
-                            that.setState({ isSettled: false, image_uri, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
-                            that.getRouteDirection(destinationPlaceId, incidentLocation);
-                        }
-                        else if (responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === true && isSettled === true) {
-                            that.setState({ isSettled: true, isIncidentReady: false, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
-                            Alert.alert(
-                                "INCIDENT HAS BEEN SETTLED",
-                                `Incident Type: ${incidentType}
-                                                 Incident Location: ${incidentLocation}
-                                                                         `
-                                ,
-                                [
-                                    { text: "Respond", onPress: () => { that.isSettled(); } },
-                                ],
-                                { cancelable: false }
-                            );
-                        }
-                        else if (responderResponding !== userId && isRequestingResponders === false && this.state.requestResponders === false && isSettled === false) {
-                            if (that.state.dispatchedResponder === false) {
-                                Alert.alert(
-                                    "INCIDENT DETAILS",
-                                    `Incident Type: ${incidentType}
-                                                 Incident Location: ${incidentLocation}
-                                                                         `
-                                    ,
-                                    [
-                                        { text: "Respond", onPress: () => { that.additionalDispatchedResponders(incidentID, userId, destinationPlaceId, incidentLocation) } },
-                                    ],
-                                    { cancelable: false }
-                                );
-                                that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
-                            }
-                            this.getRouteDirection(destinationPlaceId, incidentLocation);
-                        }
-
-                        else if (incidentID && isSettled === true) {
-                            that.setState({ isSettled: true, isIncidentReady: false, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
-                            Alert.alert(
-                                "INCIDENT HAS BEEN SETTLED",
-                                `Incident Type: ${incidentType}
-                                                 Incident Location: ${incidentLocation}
-                                                                         `
-                                ,
-                                [
-                                    { text: "Ok", onPress: () => { that.isSettled(); } },
-                                ],
-                                { cancelable: false }
-                            );
-                        }
-                        else {
-                            console.log("system is FLAWED")
-                        }
-                    })
-                }
-                else {
-                    console.log("incident Id is not here");
-                    that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '' });
-                    console.log("incident is not ready", that.state.isIncidentReady);
-                }
+                            ,
+                            [
+                                { text: "Ok", onPress: () => { that.clearSettled() } },
+                            ],
+                            { cancelable: false }
+                        );
+                    }
+                    else {
+                        console.log("system is FLAWED")
+                    }
+                })
             }
+            else {
+                console.log("incident Id is not here");
+                that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '', isSettled: false, });
+                console.log("incident is not ready", that.state.isIncidentReady);
+            }
+
         })
     }
 
@@ -533,9 +505,6 @@ export default class Responder extends Component {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude
                 });
-                // if (this.state.destinationPlaceId) {
-                //     this.getRouteDirection(this.state.destinationPlaceId, this.state.incidentLocation);
-                // }
                 app.database().ref(`mobileUsers/Responder/${this.state.userId}`).update({
                     coordinates: {
                         lng: this.state.longitude,
@@ -568,7 +537,7 @@ export default class Responder extends Component {
 
             },
             error => this.setState({ error: error.message }),
-            { enableHighAccuracy: true, distanceFilter: 5, interval: 4000 }
+            { enableHighAccuracy: true, distanceFilter: 3, interval: 4000 }
         );
     }
 
@@ -583,8 +552,9 @@ export default class Responder extends Component {
 
 
     submitIncidentHandler = () => {
-        var date = Date(Date.now());
-        date1 = date.toString();
+        var time = Date(Date.now());
+        date = time.toString();
+
 
         var coords = this.state.pointCoords;
         var coords2 = this.state.pointCoords[coords.length - 1];
@@ -598,9 +568,8 @@ export default class Responder extends Component {
             isSettled: false,
             incidentPhoto: '',
             reportedBy: this.state.userId,
-            image_uri: this.state.image_uri,
-            timeReceive: date1,
-            timeResponded: '',
+            timeReceive: date,
+            timeResponderResponded: '',
             responderResponding: this.state.userId,
             volunteerResponding: '',
             coordinates: {
@@ -622,7 +591,6 @@ export default class Responder extends Component {
             isResponding: null,
             isSettled: null,
             incidentPhoto: '',
-            image_uri: '',
             reportedBy: '',
             timeReceive: '',
             timeResponded: '',
@@ -665,33 +633,37 @@ export default class Responder extends Component {
 
     }
 
-    getRouteDirection(destinationPlaceId, destinationName) {
-        fetch(
-            `https://maps.googleapis.com/maps/api/directions/json?origin=${
-            this.state.latitude
-            },${
-            this.state.longitude
-            }&destination=place_id:${destinationPlaceId}&key=${apiKey}`
-        )
-            .then((res) => res.json())
-            .then(json => {
-                console.log('Data: ', json);
-                const points = PolyLine.decode(json.routes[0].overview_polyline.points);
-                const pointCoords = points.map(point => {
-                    return { latitude: point[0], longitude: point[1] };
-                });
-                this.setState({
-                    pointCoords,
-                    locationPredictions: [],
-                    incidentLocation: destinationName,
-                    destinationPlaceId,
-                });
-                Keyboard.dismiss();
-                this.map.fitToCoordinates(pointCoords);
-            })
-            .catch((error) => {
-                console.log(error);
+    async getRouteDirection(destinationPlaceId, destinationName) {
+
+
+        console.log("HIIII DESTINATION PLACE IS", destinationPlaceId);
+        // destinationPlaceId = this.state.incidentPhoto;
+        try {
+            const response = await fetch(
+                `https://maps.googleapis.com/maps/api/directions/json?origin=${
+                this.state.latitude
+                },${
+                this.state.longitude
+                }&destination=place_id:${destinationPlaceId}&key=${apiKey}`
+            );
+            const json = await response.json();
+            console.log(json);
+            const points = PolyLine.decode(json.routes[0].overview_polyline.points);
+            const pointCoords = points.map(point => {
+                return { latitude: point[0], longitude: point[1] };
             });
+            this.setState({
+                destinationPlaceId,
+                pointCoords,
+                locationPredictions: [],
+                incidentLocation: destinationName,
+            });
+            Keyboard.dismiss();
+            this.map.fitToCoordinates(pointCoords);
+        } catch (error) {
+            console.log(error);
+        }
+
     }
 
 
@@ -702,6 +674,27 @@ export default class Responder extends Component {
     _openDrawer = () => {
         this.refs.DRAWER.open();
     }
+
+
+    // renderSideMenu() {
+    //     return (
+    //         <View>
+    //             <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 50 }}>
+    //                 Hello {profileName}!
+    //              </Text>
+    //             <TouchableOpacity onPress={() => { console.log(profileName) }}>
+    //                 <Text style={{ color: 'white', fontSize: 30 }}>
+    //                     Profile
+    //                  </Text>
+    //             </TouchableOpacity>
+    //             <TouchableOpacity onPress={this.signOutUser}>
+    //                 <Text style={{ color: 'white', fontSize: 30 }}>
+    //                     Log Out
+    //                  </Text>
+    //             </TouchableOpacity>
+    //         </View>
+    //     )
+    // }
 
     renderContent = () => {
         return (
@@ -725,12 +718,20 @@ export default class Responder extends Component {
                         {this.state.incidentLocation}
                     </Text></View>
                 <View style={styles.responderButtons}>
-                    <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={this.arrivedLocation}>I have arrived!</AwesomeButton></View>
+                    {this.state.requestResponders === true ?
+                        <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={this.arrivedLocationRequested}>I have arrived! Requested. </AwesomeButton></View>
+                        :
+                        this.state.dispatchedResponder === false ?
+                            <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={this.arrivedLocation}>I have arrived! </AwesomeButton></View>
+                            :
+                            <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={this.arrivedLocationDispatched}>I have arrived! Dispatched. </AwesomeButton></View>
+                    }
                     <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#2c6c7c" onPress={this.isSettled}>Incident is settled!</AwesomeButton></View>
                 </View>
             </View>
         )
     }
+
 
     renderSideMenu() {
         return (
@@ -758,7 +759,6 @@ export default class Responder extends Component {
         )
     }
 
-
     render() {
 
         let marker = null;
@@ -777,15 +777,6 @@ export default class Responder extends Component {
                 </Marker>
             );
         }
-
-        const { isImageViewVisible, imageIndex } = this.state;
-        const images = [
-            {
-                source: {
-                    uri: this.state.image_uri
-                },
-            },
-        ];
 
         let polylinemarker = null;
 
@@ -817,8 +808,6 @@ export default class Responder extends Component {
         }
 
         const locationPredictions = this.state.locationPredictions.map(
-
-
             prediction => (
                 <TouchableHighlight
                     key={prediction.id}
@@ -841,9 +830,7 @@ export default class Responder extends Component {
         if (this.state.latitude === null) return null;
 
         return (
-
             <View style={styles.container}>
-
                 <Drawer
                     style={styles.mapDrawerOverlay}
                     ref="DRAWER"
@@ -866,7 +853,6 @@ export default class Responder extends Component {
                         latitudeDelta: 0.015,
                         longitudeDelta: 0.0121,
                     }}
-                // showsUserLocation={true}
 
                 >
                     {getUserLocation}
@@ -874,8 +860,7 @@ export default class Responder extends Component {
                     {this.state.isIncidentReady === true ? marker : null}
                 </MapView>
 
-
-                {/* {!this.state.isIncidentReady ? null :
+                {!this.state.isIncidentReady ? null :
 
                     <ActionButton buttonColor="orange" position='left' offsetY={45} offsetX={13}
                         renderIcon={() => (<Icon name="user-plus" style={styles.actionButtonIcon} />)}>
@@ -885,35 +870,6 @@ export default class Responder extends Component {
                         <ActionButton.Item buttonColor='#1abc9c' title="I need more volunteers" onPress={() => { this.requestAdditionalVolunteers() }}>
                             <Image source={require("../images/sendreport.png")} />
                         </ActionButton.Item>
-                    </ActionButton>
-                } */}
-
-                {!this.state.isIncidentReady ?
-                    null :
-
-                    <ActionButton buttonColor="orange" position='left' offsetY={85} offsetX={17}>
-                        {this.state.requestResponders === true ?
-                            <ActionButton.Item buttonColor='#9b59b6' title="Arrived (Requested)" onPress={() => { this.arrivedLocationRequested() }}>
-                                <Icon name="md-create" style={styles.actionButtonIcon} />
-                            </ActionButton.Item>
-                            : this.state.dispatchedResponder === false ? <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocation() }}>
-                                <Icon name="md-create" style={styles.actionButtonIcon} />
-                            </ActionButton.Item> : <ActionButton.Item buttonColor='#9b59b6' title="Arrived" onPress={() => { this.arrivedLocationDispatched() }}>
-                                    <Icon name="md-create" style={styles.actionButtonIcon} />
-                                </ActionButton.Item>}
-                        <ActionButton.Item buttonColor='#3498db' title="Request Responders" onPress={() => { this.requestAdditionalResponders() }}>
-                            <Icon name="md-notifications-off" style={styles.actionButtonIcon} />
-                        </ActionButton.Item>
-                        <ActionButton.Item buttonColor='#1abc9c' title="Request Volunteers" onPress={() => { this.requestAdditionalVolunteers() }}>
-                            <Image source={require("../images/sendreport.png")} />
-                        </ActionButton.Item>
-                        <ActionButton.Item buttonColor='#1abc9c' title="Incident is Settled" onPress={() => { this.isSettled() }}>
-                            <Icon name="md-done-all" style={styles.actionButtonIcon} />
-                        </ActionButton.Item>
-                        <ActionButton.Item buttonColor='#1abc9c' title="Sign Out" onPress={this.signOutUser}>
-                            <Icon name="md-done-all" style={styles.actionButtonIcon} />
-                        </ActionButton.Item>
-
                     </ActionButton>
                 }
 
@@ -930,7 +886,6 @@ export default class Responder extends Component {
                         icon={<Image source={require("../images/sendreport.png")} />}
                     />
                 }
-
 
                 <Modal isVisible={this.state.isModalVisible}
                     style={{
@@ -962,40 +917,12 @@ export default class Responder extends Component {
                         style={styles.destinationInput}
                         onChangeText={incidentLocation => {
                             this.setState({ incidentLocation });
-                            this.onChangeDestinationDebounced(incidentLocation)
+                            this.onChangeDestinationDebounced(incidentLocation);
                         }}
                         value={this.state.incidentLocation}
+
                     />
                     {locationPredictions}
-                    <TouchableOpacity
-                        onPress={() => {
-                            this.setState({
-                                isImageViewVisible: true,
-                            });
-                        }}
-                    >
-                        <Image source={{ uri: this.state.image_uri }} style={{
-                            width: 100, height: 100,
-                            marginBottom: 15, left: 100
-                        }}></Image>
-                    </TouchableOpacity>
-                    <Button
-                        style={{ fontSize: 18, color: "white" }}
-                        onPress={this.getImage}
-                        containerStyle={{
-                            padding: 8,
-                            marginLeft: 70,
-                            marginRight: 70,
-                            height: 40,
-                            borderRadius: 6,
-                            backgroundColor: "mediumseagreen",
-                            marginTop: 20
-                        }}
-                    >
-                        <Text style={{ justifyContent: "center", color: "white" }}>
-                            Take a Photo
-            </Text>
-                    </Button>
                     <Button
                         style={{ fontSize: 18, color: 'white' }}
                         onPress={this.submitIncidentHandler}
@@ -1009,24 +936,13 @@ export default class Responder extends Component {
                             marginTop: 20,
 
                         }}
-                        disabled={!this.state.destinationPlaceId || !this.state.incidentLocation || !this.state.incidentType}// disabled={this.state.uploading}
+                        disabled={!this.state.destinationPlaceId || !this.state.incidentLocation || !this.state.incidentType}
                     >
 
                         <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
                     </Button>
 
                 </Modal>
-                <ImageView
-                    glideAlways
-                    style={{ flex: 1, width: undefined, height: undefined }}
-                    images={images}
-                    imageIndex={imageIndex}
-                    animationType="fade"
-                    isVisible={isImageViewVisible}
-                    renderFooter={this.renderFooter}
-                    onClose={() => this.setState({ isImageViewVisible: false })}
-                />
-
             </View>
         );
     }
@@ -1034,15 +950,22 @@ export default class Responder extends Component {
 
 
 const styles = StyleSheet.create({
-    user: {
+    mapDrawerOverlay: {
         position: 'absolute',
-        top: 150
+        left: 0,
+        top: 0,
+        opacity: 0.0,
+        height: Dimensions.get('window').height,
+        width: 10,
     },
-    main: {
-        flex: 1,
-        justifyContent: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#232323'
+    profile: {
+        marginLeft: 12,
+        marginTop: 10
+    },
+    actionButtonIcon: {
+        fontSize: 20,
+        height: 22,
+        color: 'white',
     },
     responderButtons: {
         flex: 1,
@@ -1055,27 +978,32 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flex: 1,
     },
-    actionButtonIcon: {
-        fontSize: 20,
-        height: 22,
-        color: 'white',
+    main: {
+        flex: 1,
+        justifyContent: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#232323'
+    },
+    user: {
+        position: 'absolute',
+        top: 150
+    },
+    shadow: {
+        shadowColor: 'black',
+        shadowRadius: 100,
+        shadowOpacity: 1
     },
     container: {
-        ...StyleSheet.absoluteFillObject,
+
         flex: 1,
         // justifyContent: 'center',
         // alignItems: 'center',
     },
     map: {
+        //     width: screen.width,
+        // height: Dimensions.get('window').height,
         ...StyleSheet.absoluteFillObject,
-    },
-    mapDrawerOverlay: {
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        opacity: 0.0,
-        height: Dimensions.get('window').height,
-        width: 10,
+
     },
     title: {
         marginBottom: 20,

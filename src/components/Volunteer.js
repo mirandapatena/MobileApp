@@ -2,12 +2,12 @@ import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
 import ActionButton, { ActionButtonItem } from 'react-native-action-button';
-
+import AwesomeButton from 'react-native-really-awesome-button';
 import ImageView from 'react-native-image-view';
-
+import Drawer from 'react-native-circle-drawer';
 import BottomDrawer from 'rn-bottom-drawer';
 import RadioGroup from 'react-native-radio-buttons-group';
-import Icon from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 import 'babel-polyfill';
 import 'es6-symbol';
@@ -58,10 +58,10 @@ export default class Volunteer extends Component {
                         });
                     }}
                 >
-                    <Image source={{ uri: this.state.image_uri }} style={{
+                    {/* <Image source={{ uri: this.state.image_uri }} style={{
                         width: 100, height: 100,
                         marginBottom: 15, left: 100
-                    }}></Image>
+                    }}></Image> */}
                 </TouchableOpacity>
                 <ImageView
                     glideAlways
@@ -136,12 +136,12 @@ export default class Volunteer extends Component {
         // this._isMounted = true;
         app.auth().onAuthStateChanged(user => {
             if (user) {
-                if (this._isMounted) {
-                    this.setState({ user, userId: user.uid });
-                    var userId = this.state.userId
-                    this.getUserInfo();
-                    this.incidentListener(userId);
-                }
+
+                this.setState({ user, userId: user.uid });
+                var userId = this.state.userId
+                this.getUserInfo();
+                this.incidentListener(userId);
+
 
             }
         });
@@ -172,9 +172,12 @@ export default class Volunteer extends Component {
         var date = Date(Date.now());
         date1 = date.toString();
 
+
+        this.setState({ originalVolunteer: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri });
+
         app.database().ref(`incidents/${incidentID}`).update({
             isRespondingVolunteer: true,
-            image_uri: this.state.image_uri,
+            // image_uri: this.state.image_uri,
             unrespondedVolunteer: false,
             volunteerResponding: this.state.userId,
             timeReceiveVolunteer: date1
@@ -205,7 +208,9 @@ export default class Volunteer extends Component {
         let userId = this.state.userId;
         console.log("is settled?", incidentID, userId);
         this.setState({
-            isIncidentReady: false, isSettled: true, incidentId: '',
+            isIncidentReady: false,
+            isSettled: true,
+            incidentId: '',
             requestVolunteers: false,
         });
         // this.setState({ isSettled: true })
@@ -215,9 +220,9 @@ export default class Volunteer extends Component {
             isAccepted: false,
         })
 
-        app.database().ref(`incidents/${incidentID}`).update({
-            isSettled: true,
-        });
+        // app.database().ref(`incidents/${incidentID}`).update({
+        //     isSettled: true,
+        // });
     }
 
 
@@ -241,6 +246,7 @@ export default class Volunteer extends Component {
 
         var volunteerListen = app.database().ref(`mobileUsers/Volunteer/${userId}`)
         volunteerListen.update({
+            incidentID: "",
             isRejected: false,
         })
     }
@@ -288,113 +294,112 @@ export default class Volunteer extends Component {
 
 
         this.volunteerListen.on('value', (snapshot) => {
-            if (this._isMounted) {
 
-                userId = this.state.userId;
-                var data = snapshot.val();
-                var incidentID = data.incidentID;
-                console.log("incident ID", incidentID);
 
-                if (incidentID !== "") {
-                    console.log("hey i got here");
-                    this.userIncidentId = app.database().ref(`incidents/${incidentID}`)
-                    this.userIncidentId.on('value', (snapshot) => {
-                        incidentDetails = snapshot.val() || null;
-                        var incidentType = incidentDetails.incidentType;
-                        var incidentLocation = incidentDetails.incidentLocation;
-                        var destinationPlaceId = incidentDetails.destinationPlaceId;
-                        var image_uri = incidentDetails.image_uri;
-                        var volunteerResponding = incidentDetails.volunteerResponding;
-                        var isSettled = incidentDetails.isSettled;
-                        var isRequestingVolunteers = incidentDetails.isRequestingVolunteers;
+            userId = this.state.userId;
+            var data = snapshot.val();
+            var incidentID = data.incidentID;
+            console.log("incident ID", incidentID);
 
-                        if (incidentID && volunteerResponding === "" && isSettled === false) {
-                            Alert.alert(
-                                "INCIDENT DETAILS ",
-                                `Incident Type: ${incidentType}
+            if (incidentID !== "") {
+                console.log("hey i got here");
+                this.userIncidentId = app.database().ref(`incidents/${incidentID}`)
+                this.userIncidentId.on('value', (snapshot) => {
+                    incidentDetails = snapshot.val() || null;
+                    var incidentType = incidentDetails.incidentType;
+                    var incidentLocation = incidentDetails.incidentLocation;
+                    var destinationPlaceId = incidentDetails.destinationPlaceId;
+                    var image_uri = incidentDetails.image_uri;
+                    var volunteerResponding = incidentDetails.volunteerResponding;
+                    var isSettled = incidentDetails.isSettled;
+                    var isRequestingVolunteers = incidentDetails.isRequestingVolunteers;
+
+                    if (incidentID && volunteerResponding === "" && isSettled === false) {
+                        Alert.alert(
+                            "INCIDENT DETAILS ",
+                            `Incident Type: ${incidentType}
                                                  Incident Location: ${incidentLocation}
                                                                          `
-                                ,
-                                [
-                                    { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentID, destinationPlaceId, userId, image_uri) } },
-                                    { text: "Decline", onPress: () => { this.isRejected() } },
-                                ],
-                                { cancelable: false }
-                            );
+                            ,
+                            [
+                                { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentID, destinationPlaceId, userId, image_uri) } },
+                                { text: "Decline", onPress: () => { this.isRejected() } },
+                            ],
+                            { cancelable: false }
+                        );
 
-                            that.setState({ originalVolunteer: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri });
 
-                        }
-                        else if (volunteerResponding === userId && isSettled === false) {
-                            console.log("same volunteer");
+                    }
+                    else if (volunteerResponding === userId && isSettled === false) {
+                        console.log("same volunteer");
 
-                            that.setState({ originalVolunteer: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, isSettled: false, image_uri });
-                            that.getRouteDirection(destinationPlaceId, incidentLocation);
-                        }
-                        else if (volunteerResponding !== userId && this.isRequestingVolunteers === true && this.state.requestVolunteers === false) {
-                            Alert.alert(
-                                "REQUESTING ADDITIONAL VOLUNTEER ",
-                                `Incident Type: ${incidentType}
+                        that.setState({ originalVolunteer: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, isSettled: false, image_uri });
+                        that.getRouteDirection(destinationPlaceId, incidentLocation);
+                    }
+                    else if (volunteerResponding !== userId && this.isRequestingVolunteers === true && this.state.requestVolunteers === false) {
+                        Alert.alert(
+                            "REQUESTING ADDITIONAL VOLUNTEER ",
+                            `Incident Type: ${incidentType}
                                                  Incident Location: ${incidentLocation}
                                                                          `
-                                ,
-                                [
-                                    { text: "Respond", onPress: () => { that.isRequestingVolunteers(incidentID, userId, destinationPlaceId, incidentLocation) } },
-                                    { text: "Decline", onPress: () => { this.isRejected() } },
-                                ],
-                                { cancelable: false }
-                            );
-                            that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
-                        }
-                        else if (volunteerResponding === userId && isSettled === true) {
-                            console.log("same additional volunteer has acceted")
+                            ,
+                            [
+                                { text: "Respond", onPress: () => { that.isRequestingVolunteers(incidentID, userId, destinationPlaceId, incidentLocation) } },
+                                { text: "Decline", onPress: () => { this.isRejected() } },
+                            ],
+                            { cancelable: false }
+                        );
+                        that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
+                    }
+                    else if (volunteerResponding === userId && isSettled === true) {
+                        console.log("same additional volunteer has acceted")
 
-                            Alert.alert(
-                                "INCIDENT HAS BEEN SETTLED",
-                                `Incident Type: ${incidentType}
+                        Alert.alert(
+                            "INCIDENT HAS BEEN SETTLED",
+                            `Incident Type: ${incidentType}
                                                  Incident Location: ${incidentLocation}
                                                                          `
-                                ,
-                                [
-                                    { text: "OK", onPress: () => { that.isSettled() } },
-                                ],
-                                { cancelable: false }
-                            );
-                            that.setState({ isIncidentReady: false, isSettled: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri });
+                            ,
+                            [
+                                { text: "OK", onPress: () => { that.isSettled() } },
+                            ],
+                            { cancelable: false }
+                        );
+                        that.setState({ isIncidentReady: false, isSettled: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri });
 
-                        }
-                        else if (volunteerResponding !== userId && isRequestingVolunteers === true && this.state.requestVolunteers === true && isSettled === false) {
-                            console.log("requested volunteer condition. settled: false");
-                            that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
-                            that.getRouteDirection(destinationPlaceId, incidentLocation);
-                        }
-                        else if (volunteerResponding !== userId && isRequestingVolunteers === true && this.state.requestVolunteers === true && isSettled === true) {
-                            console.log("requested volunteer condition");
-                            Alert.alert(
-                                "INCIDENT HAS BEEN SETTLED",
-                                `Incident Type: ${incidentType}
+                    }
+                    else if (volunteerResponding !== userId && isRequestingVolunteers === true && this.state.requestVolunteers === true && isSettled === false) {
+                        console.log("requested volunteer condition. settled: false");
+                        that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
+                        that.getRouteDirection(destinationPlaceId, incidentLocation);
+                    }
+                    else if (volunteerResponding !== userId && isRequestingVolunteers === true && this.state.requestVolunteers === true && isSettled === true) {
+                        console.log("requested volunteer condition");
+                        Alert.alert(
+                            "INCIDENT HAS BEEN SETTLED",
+                            `Incident Type: ${incidentType}
                                                  Incident Location: ${incidentLocation}
                                                                          `
-                                ,
-                                [
-                                    { text: "OK", onPress: () => { that.isSettled() } },
-                                ],
-                                { cancelable: false }
-                            );
-                            that.setState({ isIncidentReady: false, isSettled: true, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                            ,
+                            [
+                                { text: "OK", onPress: () => { that.isSettled() } },
+                            ],
+                            { cancelable: false }
+                        );
+                        that.setState({ isIncidentReady: false, isSettled: true, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
 
-                        }
-                        else {
-                            console.log("system is FLAWED")
-                        }
-                    })
-                }
-                else {
-                    console.log("incident Id is not here");
-                    that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '' });
-                    console.log("incident is not ready", that.state.isIncidentReady);
-                }
+                    }
+                    else {
+                        console.log("system is FLAWED")
+                    }
+                })
             }
+            else {
+                console.log("incident Id is not here");
+                that.setState({ isIncidentReady: false, destinationPlaceId: '', incidentLocation: '' });
+                console.log("incident is not ready", that.state.isIncidentReady);
+            }
+
         })
     }
 
@@ -587,6 +592,69 @@ export default class Volunteer extends Component {
         this.setState({ isModalVisible: !this.state.isModalVisible });
     }
 
+    renderContent = () => {
+        return (
+            <View style={styles.main}>
+                <View>
+                    <Text style={{
+                        fontSize: 20,
+                        color: 'white',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        marginTop: 5
+                    }}>
+                        {this.state.incidentType}
+                    </Text>
+                    <Text style={{
+                        color: 'white',
+                        fontSize: 19,
+                        textAlign: 'center',
+                        marginBottom: 7
+                    }}>
+                        {this.state.incidentLocation}
+                    </Text></View>
+
+                <View style={styles.responderButtons}>
+                    {this.state.requestVolunteers === true ?
+                        <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={() => { this.arrivedLocationRequested() }}>I have arrived! Requested. </AwesomeButton></View>
+                        :
+                        <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={() => { this.arrivedLocation() }}>I have arrived! </AwesomeButton></View>
+                    }
+
+                </View>
+            </View>
+        )
+    }
+    _openDrawer = () => {
+        this.refs.DRAWER.open();
+    }
+
+
+    renderSideMenu() {
+        return (
+            <View>
+                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 50 }}>
+                    Hello {this.state.firstName}!
+                 </Text>
+                <Text style={{ color: 'white', fontWeight: 'normal', fontSize: 15 }}>
+                    You are a {this.state.userType}.
+                 </Text>
+                <TouchableOpacity disabled={this.state.isIncidentReady} onPress={this.signOutUser}>
+                    <Text style={{ color: 'white', fontSize: 30 }}>
+                        Log Out
+                     </Text>
+                </TouchableOpacity>
+            </View>
+        )
+    }
+
+    renderTopRightView() {
+        return (
+            <View style={{ top: 10, left: 75 }}>
+                <Image style={{ width: 65, height: 65 }} source={require("../images/avatar.png")} />
+            </View>
+        )
+    }
 
     render() {
 
@@ -656,6 +724,19 @@ export default class Volunteer extends Component {
         return (
 
             <View style={styles.container}>
+
+                <Drawer
+                    style={styles.mapDrawerOverlay}
+                    ref="DRAWER"
+                    primaryColor="#2d2d2d"
+                    secondaryColor="#5C7788"
+                    cancelColor="#5C7788"
+                    sideMenu={this.renderSideMenu()}
+                    topRightView={this.renderTopRightView()} />
+
+                <View style={{ alignSelf: 'flex-end', position: 'absolute', marginTop: 8, paddingRight: 8 }}><AwesomeButton backgroundColor="#2d2d2d" borderRadius={50} height={35} width={35} raiseLevel={2} backgroundDarker="rgba(0,0,0,0.05)" onPress={this._openDrawer}>
+                    <Image style={{ width: 22.63, height: 15.33 }} source={require("../images/menu.png")} /></AwesomeButton></View>
+
                 <MapView
                     ref={map => { this.map = map; }}
                     provider={PROVIDER_GOOGLE} // remove if not using Google Maps
@@ -670,12 +751,12 @@ export default class Volunteer extends Component {
 
                 >
                     {getUserLocation}
-                    {this.state.isSettled === false ? polylinemarker : null}
-                    {this.state.isSettled === false ? marker : null}
+                    {this.state.isIncidentReady === true ? polylinemarker : null}
+                    {this.state.isIncidentReady === true ? marker : null}
                 </MapView>
 
 
-                {!this.state.isIncidentReady ?
+                {/* {!this.state.isIncidentReady ?
                     <ActionButton buttonColor="rgba(50,0,60,1)" position='right' offsetX={17} onPress={this.signOutUser} /> :
 
                     // <ActionButton buttonColor="orange" position='left' offsetY={85} offsetX={17}>
@@ -701,13 +782,27 @@ export default class Volunteer extends Component {
 
 
                     </ActionButton>
-                }
+                } */}
 
-                {this.state.isIncidentReady ?
+                {/* {this.state.isIncidentReady ?
                     <BottomDrawer containerHeight={150} downDisplay={50} startUp={false} roundedEdges={true}>
                         {this.renderContent()}
                     </BottomDrawer> :
                     <ActionButton buttonColor="rgba(0,76,60,1)" position='left' offsetX={17} onPress={this._toggleModal} />
+                } */}
+
+                {this.state.isIncidentReady ?
+                    <BottomDrawer containerHeight={170} startUp={false} roundedEdges={true}>
+                        {this.renderContent()}
+                    </BottomDrawer> :
+                    <ActionButton
+                        buttonColor="#2d2d2d"
+                        shadowStyle={{ shadowRadius: 10, shadowColor: 'black', shadowOpacity: 1 }}
+                        position='left'
+                        offsetX={13}
+                        onPress={this._toggleModal}
+                        icon={<Image source={require("../images/sendreport.png")} />}
+                    />
                 }
 
                 <Modal isVisible={this.state.isModalVisible}
@@ -743,7 +838,7 @@ export default class Volunteer extends Component {
                         <Text>
                             Incident Type: {this.state.incidentType}
                             Incident Location: {this.state.incidentLocation}
-                            Photo of Incident: <Image source={{ uri: this.state.image_uri }} style={{ width: 100, height: 100 }}></Image>
+                            {/* Photo of Incident: <Image source={{ uri: this.state.image_uri }} style={{ width: 100, height: 100 }}></Image> */}
 
                         </Text>
                     ) : (<Text> No Incident Yet</Text>)
