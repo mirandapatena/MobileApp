@@ -1,4 +1,5 @@
 
+
 import RNFetchBlob from 'react-native-fetch-blob'
 var ImagePicker = require('react-native-image-picker');
 import React, { Component } from "react";
@@ -19,10 +20,8 @@ import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 import PolyLine from '@mapbox/polyline';
 import ImageView from 'react-native-image-view';
 import Geolocation from 'react-native-geolocation-service';
-import { Actions } from 'react-native-router-flux';
 import Routes from '../Routes';
 
-var us = '';
 var options = {
 };
 const Blob = RNFetchBlob.polyfill.Blob
@@ -113,11 +112,15 @@ export default class RegularUser extends Component {
     getImage() {
 
         ImagePicker.launchCamera(options, (response) => {
-
-
-            this.imageBlob(response.uri)
-                .then(url => { alert('uploaded'); this.setState({ image_uri: url }) })
-                .catch(error => console.log(error))
+            if (response.didCancel) {
+                Alert.alert('User Cancelled Taking photo')
+            }
+            else {
+                this.imageBlob(response.uri)
+                    .then(url => { alert('uploaded'); this.setState({ image_uri: url }) })
+                    .then(console.log(this.state.image_uri))
+                    .catch(error => console.log(error))
+            }
 
         }
         )
@@ -126,7 +129,6 @@ export default class RegularUser extends Component {
 
     onPress = data => {
         this.setState({ data });
-
         let selectedButton = this.state.data.find(e => e.selected == true);
         selectedButton = selectedButton ? selectedButton.value : this.state.data[0].label;
         this.setState({ incidentType: selectedButton });
@@ -222,7 +224,7 @@ export default class RegularUser extends Component {
 
             },
             error => this.setState({ error: error.message }),
-            { enableHighAccuracy: true, distanceFilter: 5, interval: 4000 }
+            { enableHighAccuracy: true, distanceFilter: 2, fastestInterval: 1000 }
         );
     }
 
@@ -292,7 +294,7 @@ export default class RegularUser extends Component {
                 this.incidentIDListen = app.database().ref(`incidents/${incidentID}`)
                 this.incidentIDListen.on('value', (snapshot) => {
                     incidentDetails = snapshot.val() || null;
-
+                    var image_uri = incidentDetails.image_uri;
                     var markerLat = incidentDetails.coordinates.lat;
                     var markerLng = incidentDetails.coordinates.lng;
                     console.log("COORDINATES", markerLat, markerLng);
@@ -307,7 +309,7 @@ export default class RegularUser extends Component {
 
                         that.incidentResponderListener(incidentID);
                         that.incidentVolunteerListener(incidentID);
-                        that.setState({ markerLat, markerLng, isSettled: false, incidentType, incidentLocation, isIncidentReady: true });
+                        that.setState({ markerLat, markerLng, isSettled: false, incidentType, incidentLocation, isIncidentReady: true, image_uri });
                         that.getRouteDirection(destinationPlaceId, incidentLocation);
 
 
@@ -329,11 +331,11 @@ export default class RegularUser extends Component {
     incidentSettled = () => {
 
 
-        this.setState({ isSettled: true, isIncidentReady: false, hasResponderAlerted: false })
+        this.setState({ isSettled: true, isIncidentReady: false, hasResponderAlerted: false, image_uri: "", })
         this.setState({ markerCoords: null });
 
         Alert.alert(
-            "INCIDENT HAS BEEN RESPONDED!! ",
+            "INCIDENT HAS BEEN RESPONDED!",
             `Thank you for reporting!  `
             ,
             [
@@ -528,7 +530,7 @@ export default class RegularUser extends Component {
         return new Promise((resolve, reject) => {
             const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri
             let uploadBlob = null
-            const imageRef = app.storage().ref(`/reports/RegularUser/${currentUser.uid}`)
+            const imageRef = app.storage().ref('images').child(`/RegularUser/${this.state.userId}`)
 
             fs.readFile(uploadUri, 'base64')
                 .then((data) => {
@@ -564,8 +566,6 @@ export default class RegularUser extends Component {
         app.database().ref("/incidents").push({
             incidentType: this.state.incidentType,
             incidentLocation: this.state.incidentLocation,
-            unresponded: true,
-            isResponding: false,
             isSettled: false,
             incidentPhoto: '',
             reportedBy: this.state.userId,
@@ -585,6 +585,20 @@ export default class RegularUser extends Component {
             const incidentUserKey = snap.key
             this.setState({ incidentUserKey })
             console.log("INCIDENT USER KEY HEREEEEE: ", this.state.userId);
+            this.setIncidentID();
+            Alert.alert(
+                'Attention: ',
+                'Report has been sent',
+                [
+                    {
+                        text: 'Cancel',
+                        onPress: () => console.log('Cancel Pressed'),
+                        style: 'cancel',
+                    },
+                    { text: 'OK', onPress: console.log("ok") },
+                ],
+                { cancelable: false },
+            );
         })
         this.setState({
             incidentType: '',
@@ -614,19 +628,8 @@ export default class RegularUser extends Component {
 
         });
         console.log(this.state.incidentsList);
-        Alert.alert(
-            'Attention: ',
-            'Report has been sent',
-            [
-                {
-                    text: 'Cancel',
-                    onPress: () => console.log('Cancel Pressed'),
-                    style: 'cancel',
-                },
-                { text: 'OK', onPress: () => this.setIncidentID() },
-            ],
-            { cancelable: false },
-        );
+
+
     }
 
     signOutUser() {
@@ -662,7 +665,17 @@ export default class RegularUser extends Component {
         this.getRouteDirection(place_id, description);
     }
 
+
     renderContent = () => {
+        const { isImageViewVisible } = this.state;
+        const images = [
+            {
+                source: {
+                    uri: this.state.image_uri
+                },
+            },
+        ];
+
         return (
             <View style={styles.main}>
                 <View>
@@ -682,7 +695,31 @@ export default class RegularUser extends Component {
                         marginBottom: 7
                     }}>
                         {this.state.incidentLocation}
-                    </Text></View>
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() => {
+                            this.setState({
+                                isImageViewVisible: true,
+                            });
+                        }}
+                        disabled={!this.state.image_uri}
+
+                    >
+                        <Image source={{ uri: this.state.image_uri }} style={{
+                            width: 100, height: 100,
+                            marginBottom: 15, left: 100
+                        }}></Image>
+                    </TouchableOpacity>
+                    <ImageView
+                        glideAlways
+                        images={images}
+                        animationType="fade"
+                        isVisible={isImageViewVisible}
+                        renderFooter={this.renderFooter}
+                        onClose={() => this.setState({ isImageViewVisible: false })}
+                    />
+
+                </View>
             </View>
         )
     }
@@ -932,6 +969,8 @@ export default class RegularUser extends Component {
                                 isImageViewVisible: true,
                             });
                         }}
+                        disabled={!this.state.image_uri}
+
                     >
                         <Image source={{ uri: this.state.image_uri }} style={{
                             width: 100, height: 100,

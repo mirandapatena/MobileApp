@@ -1,3 +1,5 @@
+
+
 import React, { Component } from "react";
 import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
 import Modal from 'react-native-modal';
@@ -25,57 +27,57 @@ const TAB_BAR_HEIGHT = 100;
 
 export default class Volunteer extends Component {
 
-    renderContent = () => {
-        const { isImageViewVisible, imageIndex } = this.state;
-        const images = [
-            {
-                source: {
-                    uri: this.state.image_uri
-                },
-            },
-        ];
-        return (
-            <View>
-                <Text style={{
-                    fontSize: 20,
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    marginTop: 5
-                }}>
-                    {this.state.incidentType}
-                </Text>
-                <Text style={{
-                    fontSize: 19,
-                    textAlign: 'center',
-                    marginBottom: 10
-                }}>
-                    {this.state.incidentLocation}
-                </Text>
-                <TouchableOpacity
-                    onPress={() => {
-                        this.setState({
-                            isImageViewVisible: true,
-                        });
-                    }}
-                >
-                    {/* <Image source={{ uri: this.state.image_uri }} style={{
-                        width: 100, height: 100,
-                        marginBottom: 15, left: 100
-                    }}></Image> */}
-                </TouchableOpacity>
-                <ImageView
-                    glideAlways
-                    style={{ flex: 1, width: undefined, height: undefined }}
-                    images={images}
-                    imageIndex={imageIndex}
-                    animationType="fade"
-                    isVisible={isImageViewVisible}
-                    renderFooter={this.renderFooter}
-                    onClose={() => this.setState({ isImageViewVisible: false })}
-                />
-            </View>
-        )
-    }
+    // renderContent = () => {
+    //     const { isImageViewVisible, imageIndex } = this.state;
+    //     const images = [
+    //         {
+    //             source: {
+    //                 uri: this.state.image_uri
+    //             },
+    //         },
+    //     ];
+    //     return (
+    //         <View>
+    //             <Text style={{
+    //                 fontSize: 20,
+    //                 fontWeight: 'bold',
+    //                 textAlign: 'center',
+    //                 marginTop: 5
+    //             }}>
+    //                 {this.state.incidentType}
+    //             </Text>
+    //             <Text style={{
+    //                 fontSize: 19,
+    //                 textAlign: 'center',
+    //                 marginBottom: 10
+    //             }}>
+    //                 {this.state.incidentLocation}
+    //             </Text>
+    //             <TouchableOpacity
+    //                 onPress={() => {
+    //                     this.setState({
+    //                         isImageViewVisible: true,
+    //                     });
+    //                 }}
+    //             >
+    //                  <Image source={{ uri: this.state.image_uri }} style={{
+    //                     width: 100, height: 100,
+    //                     marginBottom: 15, left: 100
+    //                 }}></Image>
+    //             </TouchableOpacity>
+    //             <ImageView
+    //                 glideAlways
+    //                 style={{ flex: 1, width: undefined, height: undefined }}
+    //                 images={images}
+    //                 imageIndex={imageIndex}
+    //                 animationType="fade"
+    //                 isVisible={isImageViewVisible}
+    //                 renderFooter={this.renderFooter}
+    //                 onClose={() => this.setState({ isImageViewVisible: false })}
+    //             />
+    //         </View>
+    //     )
+    // }
     _isMounted = false;
     constructor(props) {
         super(props);
@@ -177,7 +179,7 @@ export default class Volunteer extends Component {
 
         app.database().ref(`incidents/${incidentID}`).update({
             isRespondingVolunteer: true,
-            // image_uri: this.state.image_uri,
+            image_uri: this.state.image_uri,
             unrespondedVolunteer: false,
             volunteerResponding: this.state.userId,
             timeReceiveVolunteer: date1
@@ -593,6 +595,15 @@ export default class Volunteer extends Component {
     }
 
     renderContent = () => {
+        const { isImageViewVisible, imageIndex } = this.state;
+        const images = [
+            {
+                source: {
+                    uri: this.state.image_uri
+                },
+            },
+        ];
+
         return (
             <View style={styles.main}>
                 <View>
@@ -612,7 +623,30 @@ export default class Volunteer extends Component {
                         marginBottom: 7
                     }}>
                         {this.state.incidentLocation}
-                    </Text></View>
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() => {
+                            this.setState({
+                                isImageViewVisible: true,
+                            });
+                        }}
+                        disabled={!this.state.image_uri}
+                    >
+                        <Image source={{ uri: this.state.image_uri }} style={{
+                            width: 100, height: 100,
+                            marginBottom: 15, left: 100
+                        }}></Image>
+                    </TouchableOpacity>
+                    <ImageView
+                        glideAlways
+                        style={{ flex: 1, width: undefined, height: undefined }}
+                        images={images}
+                        animationType="fade"
+                        isVisible={isImageViewVisible}
+                        renderFooter={this.renderFooter}
+                        onClose={() => this.setState({ isImageViewVisible: false })}
+                    />
+                </View>
 
                 <View style={styles.responderButtons}>
                     {this.state.requestVolunteers === true ?
@@ -758,7 +792,6 @@ export default class Volunteer extends Component {
 
                 {/* {!this.state.isIncidentReady ?
                     <ActionButton buttonColor="rgba(50,0,60,1)" position='right' offsetX={17} onPress={this.signOutUser} /> :
-
                     // <ActionButton buttonColor="orange" position='left' offsetY={85} offsetX={17}>
                     //     <ActionButton.Item buttonColor='#9b59b6' title="I have arrived" onPress={() => { this.arrivedLocation() }}>
                     //         <Icon name="md-create" style={styles.actionButtonIcon} />
@@ -766,7 +799,6 @@ export default class Volunteer extends Component {
                     //     <ActionButton.Item buttonColor='#1abc9c' title="Sign Out" onPress={this.signOutUser}>
                     //         <Icon name="md-done-all" style={styles.actionButtonIcon} />
                     //     </ActionButton.Item>
-
                     <ActionButton buttonColor="orange" position='left' offsetY={85} offsetX={17}>
                         {this.state.requestVolunteers === true ?
                             <ActionButton.Item buttonColor='#9b59b6' title="Arrived (Requested)" onPress={() => { this.arrivedLocationRequested() }}>
@@ -779,8 +811,6 @@ export default class Volunteer extends Component {
                         <ActionButton.Item buttonColor='#1abc9c' title="Sign Out" onPress={this.signOutUser}>
                             <Icon name="md-done-all" style={styles.actionButtonIcon} />
                         </ActionButton.Item>
-
-
                     </ActionButton>
                 } */}
 

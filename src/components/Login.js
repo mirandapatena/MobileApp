@@ -42,6 +42,8 @@ class Login extends Component {
 
   };
 
+
+
   signUp() {
     Actions.signup()
   }
@@ -58,6 +60,11 @@ class Login extends Component {
 
     Actions.RegularUser()
   }
+
+  forgotPass() {
+    Actions.forgotPass()
+  }
+
 
 
   render() {
@@ -122,7 +129,15 @@ class Login extends Component {
               </Text>
             </TouchableOpacity>
 
-
+            <View style={{
+              flexGrow: 1,
+              justifyContent: 'center',
+              flexDirection: 'row',
+              paddingVertical: 5,
+            }}>
+              <Text style={styles.signupText}>Forgot password?</Text>
+              <TouchableOpacity onPress={this.forgotPass}><Text style={styles.signupButton}> Reset Password</Text></TouchableOpacity>
+            </View>
             <View style={styles.signupTextCont}>
               <Text style={styles.signupText}>Don't have an account yet?</Text>
               <TouchableOpacity onPress={this.signUp}><Text style={styles.signupButton}> Signup</Text></TouchableOpacity>

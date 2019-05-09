@@ -2,8 +2,8 @@
 
 import React, { Component } from "react";
 import {
-    Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert,
-    DrawerLayoutAndroid
+    Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet,
+    TouchableHighlight, Keyboard, Alert, Platform, DrawerLayoutAndroid
 } from "react-native";
 import Modal from 'react-native-modal';
 import ActionButton, { ActionButtonItem } from 'react-native-action-button';
@@ -13,14 +13,14 @@ import Button from 'react-native-button'
 import BottomDrawer from 'rn-bottom-drawer';
 import RadioGroup from 'react-native-radio-buttons-group';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
+var ImagePicker = require('react-native-image-picker');
 import 'babel-polyfill';
 import 'es6-symbol';
-
+import RNFetchBlob from 'react-native-fetch-blob';
 import app from '../config/fire';
 import apiKey from '../config/apiKey';
 import _ from 'lodash';
-
+import ImageView from 'react-native-image-view';
 import MapView, { PROVIDER_GOOGLE, Polyline, Marker } from 'react-native-maps';
 import Geolocation from 'react-native-geolocation-service';
 import PolyLine from '@mapbox/polyline';
@@ -28,11 +28,21 @@ var screen = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 100;
 var profileName = 'LOL';
 
+var options = {
+};
+const Blob = RNFetchBlob.polyfill.Blob
+const fs = RNFetchBlob.fs
+window.XMLHttpRequest = RNFetchBlob.polyfill.XMLHttpRequest
+window.Blob = Blob
+
 
 export default class Responder extends Component {
     _isMounted = false;
     constructor(props) {
         super(props);
+        this.getImage = this.getImage.bind(this)
+        this.geProfileImage = this.getProfileImage.bind(this)
+
         this.state = {
             isModalVisible: false,
             isAccepted: false,
@@ -45,11 +55,14 @@ export default class Responder extends Component {
             originalResponder: false,
             userKey: "",
             userType: '',
+            image_uri: '',
+            isImageViewVisible: false,
             incidentType: "Vehicular Accident",
             incidentLocation: "",
             firstName: "",
             lastName: "",
             user: null,
+            profilePhoto: '',
             unresponded: true,
             isResponding: false,
             isSettled: false,
@@ -106,6 +119,90 @@ export default class Responder extends Component {
 
     }
 
+    getImage() {
+
+        ImagePicker.launchCamera(options, (response) => {
+            if (response.didCancel) {
+                Alert.alert('User Cancelled Taking Photo')
+            }
+            else {
+                this.imageBlob(response.uri)
+                    .then(alert('Uploading Please Wait!'), this.setState({ uploading: true }), console.log(this.state.uploading))
+                    .then(url => { alert('Photo has been Uploaded'); this.setState({ image_uri: url, uploading: false }); console.log(this.state.uploading) })
+                    .catch(error => console.log(error))
+            }
+        }
+        )
+    };
+
+    getProfileImage() {
+
+        ImagePicker.showImagePicker(options, (response) => {
+            this.imageBlob(response.uri)
+                .then(alert('Uploading Please Wait!'), this.setState({ uploading: true }), console.log(this.state.uploading))
+                .then(url => { alert('Photo has been Uploaded'); this.setState({ profilePhoto: url, uploading: false }); console.log(this.state.uploading) })
+                .catch(error => console.log(error))
+
+        }
+        )
+    };
+
+
+    imageBlob(uri, mime = 'application/octet-stream') {
+        return new Promise((resolve, reject) => {
+            const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri
+            let uploadBlob = null
+            const imageRef = app.storage().ref('images').child(`/Responder/Reports/${this.state.userId}`)
+
+            fs.readFile(uploadUri, 'base64')
+                .then((data) => {
+                    return Blob.build(data, { type: `${mime};BASE64` })
+                })
+                .then((blob) => {
+                    uploadBlob = blob
+                    return imageRef.put(blob, { contentType: mime })
+                })
+                .then(() => {
+                    uploadBlob.close()
+                    return imageRef.getDownloadURL()
+                })
+                .then((url) => {
+                    resolve(url)
+                    console.log(url)
+                })
+                .catch((error) => {
+                    reject(error)
+                })
+        })
+    }
+
+    imageProfileBlob(uri, mime = 'application/octet-stream') {
+        return new Promise((resolve, reject) => {
+            const uploadUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri
+            let uploadBlob = null
+            const imageRef = app.storage().ref('images').child(`/Responder/Profiles/${this.state.userId}`)
+
+            fs.readFile(uploadUri, 'base64')
+                .then((data) => {
+                    return Blob.build(data, { type: `${mime};BASE64` })
+                })
+                .then((blob) => {
+                    uploadBlob = blob
+                    return imageRef.put(blob, { contentType: mime })
+                })
+                .then(() => {
+                    uploadBlob.close()
+                    return imageRef.getDownloadURL()
+                })
+                .then((url) => {
+                    resolve(url)
+                    console.log(url)
+                })
+                .catch((error) => {
+                    reject(error)
+                })
+        })
+    }
 
     authListener() {
         // this._isMounted = true;
@@ -148,7 +245,7 @@ export default class Responder extends Component {
 
     }
 
-    changeIncidentState = (incidentType, incidentLocation, incidentID, destinationPlaceId, userId) => {
+    changeIncidentState = (incidentType, incidentLocation, incidentID, destinationPlaceId, userId, image_uri) => {
 
         var time = Date(Date.now());
         date = time.toString();
@@ -158,6 +255,7 @@ export default class Responder extends Component {
             isRespondingResponder: true,
             unrespondedResponder: false,
             responderResponding: this.state.userId,
+            image_uri: this.state.image_uri,
             timeReceive: date,
         });
 
@@ -195,6 +293,7 @@ export default class Responder extends Component {
             requestResponders: false,
             incidentId: "",
             isAccepted: false,
+            image_uri: "",
 
         })
         var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
@@ -211,6 +310,7 @@ export default class Responder extends Component {
         console.log("is settled?", incidentID, userId);
 
         this.setState({
+            image_uri: "",
             isSettled: false,
             dispatchedResponder: false,
             isIncidentReady: false,
@@ -350,6 +450,7 @@ export default class Responder extends Component {
                     incidentDetails = snapshot.val() || null;
                     var incidentType = incidentDetails.incidentType;
                     var incidentLocation = incidentDetails.incidentLocation;
+                    var image_uri = incidentDetails.image_uri;
                     var destinationPlaceId = incidentDetails.destinationPlaceId;
                     var responderResponding = incidentDetails.responderResponding;
                     var isSettled = incidentDetails.isSettled;
@@ -365,17 +466,17 @@ export default class Responder extends Component {
                                                                          `
                             ,
                             [
-                                { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentID, destinationPlaceId, userId) } },
+                                { text: "Respond", onPress: () => { that.changeIncidentState(incidentType, incidentLocation, incidentID, destinationPlaceId, userId, image_uri) } },
                             ],
                             { cancelable: false }
                         );
-                        that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID });
+                        that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, image_uri });
                     }
                     else if (incidentID !== "" && responderResponding === userId && isSettled === false) {
                         console.log("ARGUMENT 2");
                         console.log("same responder");
 
-                        that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, isSettled: false });
+                        that.setState({ originalResponder: true, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, userId, incidentId: incidentID, isSettled: false, image_uri });
                         that.getRouteDirection(destinationPlaceId, incidentLocation);
                     }
                     else if (incidentID !== "" && responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === false && isSettled === false) {
@@ -388,11 +489,11 @@ export default class Responder extends Component {
                                                                          `
                             ,
                             [
-                                { text: "Respond", onPress: () => { that.isRequestingResponders(incidentID, userId, destinationPlaceId, incidentLocation) } },
+                                { text: "Respond", onPress: () => { that.isRequestingResponders(incidentID, userId, destinationPlaceId, incidentLocation, image_uri) } },
                             ],
                             { cancelable: false }
                         );
-                        that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                        that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
                     }
                     else if (incidentID !== "" && responderResponding === userId && isSettled === true) {
                         console.log("ARGUMENT 4");
@@ -414,7 +515,7 @@ export default class Responder extends Component {
                     else if (incidentID !== "" && responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === true && isSettled === false) {
                         //condition requested responders
                         console.log("ARGUMENT 5");
-                        that.setState({ isSettled: false, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                        that.setState({ isSettled: false, isIncidentReady: true, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
                         that.getRouteDirection(destinationPlaceId, incidentLocation);
                     }
                     else if (incidentID !== "" && responderResponding !== userId && isRequestingResponders === true && this.state.requestResponders === true && isSettled === true) {
@@ -442,18 +543,18 @@ export default class Responder extends Component {
                                                                          `
                                 ,
                                 [
-                                    { text: "Respond", onPress: () => { that.additionalDispatchedResponders(incidentID, userId, destinationPlaceId, incidentLocation) } },
+                                    { text: "Respond", onPress: () => { that.additionalDispatchedResponders(incidentID, userId, destinationPlaceId, incidentLocation, image_uri) } },
                                 ],
                                 { cancelable: false }
                             );
-                            that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                            that.setState({ incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
                         }
                         this.getRouteDirection(destinationPlaceId, incidentLocation);
                     }
 
                     else if (incidentID !== "" && isSettled === true) {
                         console.log("ARGUMENT 8");
-                        that.setState({ isSettled: true, isIncidentReady: false, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId });
+                        that.setState({ isSettled: true, isIncidentReady: false, incidentType, incidentLocation, destinationPlaceId, incidentId: incidentID, userId, image_uri });
                         Alert.alert(
                             "INCIDENT HAS BEEN SETTLED",
                             `Incident Type: ${incidentType}
@@ -537,7 +638,7 @@ export default class Responder extends Component {
 
             },
             error => this.setState({ error: error.message }),
-            { enableHighAccuracy: true, distanceFilter: 3, interval: 4000 }
+            { enableHighAccuracy: true, distanceFilter: 2, fastestInterval: 1000 }
         );
     }
 
@@ -567,6 +668,7 @@ export default class Responder extends Component {
             isResponding: false,
             isSettled: false,
             incidentPhoto: '',
+            image_uri: this.state.image_uri,
             reportedBy: this.state.userId,
             timeReceive: date,
             timeResponderResponded: '',
@@ -592,6 +694,7 @@ export default class Responder extends Component {
             isSettled: null,
             incidentPhoto: '',
             reportedBy: '',
+            image_uri: '',
             timeReceive: '',
             timeResponded: '',
             responderResponding: '',
@@ -697,6 +800,14 @@ export default class Responder extends Component {
     // }
 
     renderContent = () => {
+        const { isImageViewVisible } = this.state;
+        const images = [
+            {
+                source: {
+                    uri: this.state.image_uri
+                },
+            },
+        ];
         return (
             <View style={styles.main}>
                 <View>
@@ -716,7 +827,34 @@ export default class Responder extends Component {
                         marginBottom: 7
                     }}>
                         {this.state.incidentLocation}
-                    </Text></View>
+                    </Text>
+                    <TouchableOpacity
+                        style={{
+                            width: 100, height: 100,
+                        }}
+                        onPress={() => {
+                            this.setState({
+                                isImageViewVisible: true,
+                            });
+                        }}
+                        disabled={!this.state.image_uri}
+                    >
+                        <Image source={{ uri: this.state.image_uri }} style={{
+                            width: 100, height: 100,
+                            marginBottom: 15, left: 100
+                        }}></Image>
+                    </TouchableOpacity>
+                    <ImageView
+                        glideAlways
+                        style={{ flex: 1, width: undefined, height: undefined }}
+                        images={images}
+                        animationType="fade"
+                        isVisible={isImageViewVisible}
+                        renderFooter={this.renderFooter}
+                        onClose={() => this.setState({ isImageViewVisible: false })}
+                    />
+
+                </View>
                 <View style={styles.responderButtons}>
                     {this.state.requestResponders === true ?
                         <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={this.arrivedLocationRequested}>I have arrived! Requested. </AwesomeButton></View>
@@ -760,6 +898,14 @@ export default class Responder extends Component {
     }
 
     render() {
+        const { isImageViewVisible } = this.state;
+        const images = [
+            {
+                source: {
+                    uri: this.state.image_uri
+                },
+            },
+        ];
 
         let marker = null;
 
@@ -923,6 +1069,36 @@ export default class Responder extends Component {
 
                     />
                     {locationPredictions}
+                    <TouchableOpacity
+                        onPress={() => {
+                            this.setState({
+                                isImageViewVisible: true,
+                            });
+                        }}
+                        disabled={!this.state.image_uri}
+                    >
+                        <Image source={{ uri: this.state.image_uri }} style={{
+                            width: 100, height: 100,
+                            marginBottom: 15, left: 100
+                        }}></Image>
+                    </TouchableOpacity>
+                    <Button
+                        style={{ fontSize: 18, color: 'white' }}
+                        onPress={this.getImage}
+
+                        containerStyle={{
+                            padding: 8,
+                            marginLeft: 70,
+                            marginRight: 70,
+                            height: 40,
+                            borderRadius: 6,
+                            backgroundColor: 'mediumseagreen',
+                            marginTop: 20,
+                        }}
+                    >
+                        <Text style={{ justifyContent: 'center', color: 'white' }} >Take Photo</Text>
+                    </Button>
+
                     <Button
                         style={{ fontSize: 18, color: 'white' }}
                         onPress={this.submitIncidentHandler}
@@ -941,7 +1117,15 @@ export default class Responder extends Component {
 
                         <Text style={{ justifyContent: 'center', color: 'white' }} >Submit Incident</Text>
                     </Button>
-
+                    <ImageView
+                        glideAlways
+                        style={{ flex: 1, width: undefined, height: undefined }}
+                        images={images}
+                        animationType="fade"
+                        isVisible={isImageViewVisible}
+                        renderFooter={this.renderFooter}
+                        onClose={() => this.setState({ isImageViewVisible: false })}
+                    />
                 </Modal>
             </View>
         );

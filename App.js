@@ -1,7 +1,7 @@
 
 import React, { Component } from 'react';
 import {
-  Platform, StyleSheet, Text, View, StatusBar, PermissionsAndroid
+  Platform, StyleSheet, Text, View, StatusBar, PermissionsAndroid, Alert
 } from 'react-native';
 
 
@@ -11,6 +11,7 @@ import Responder from './src/components/Responder';
 import LoadingScreen from './src/components/LoadingScreen';
 import Login from './src/components/Login';
 import Register from './src/components/Register';
+import ForgotPassword from './src/components/forgotPassword';
 
 
 import 'babel-polyfill';
@@ -108,7 +109,7 @@ export default class App extends Component {
           `Command center must verify user`
           ,
           [
-            { text: "Ok", onPress: () => { console.log("ok") } },
+            { text: "Ok", onPress: () => { Actions.login() } },
           ],
           { cancelable: false }
         );
@@ -160,6 +161,7 @@ export default class App extends Component {
             <Scene key="RegularUser" component={RegularUser} title="RegularUser" />
             <Scene key="Volunteer" component={Volunteer} title="Volunteer" />
             <Scene key="Responder" component={Responder} title="Responder" />
+            <Scene key="forgotPass" component={ForgotPassword} title="Forgot Password" />
           </Stack>
         </Router>
       </View>

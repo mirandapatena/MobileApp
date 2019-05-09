@@ -8,6 +8,8 @@ import Volunteer from './components/Volunteer';
 import RegularUser from './components/RegularUser';
 import Responder from './components/Responder';
 import LoadingScreen from './components/LoadingScreen';
+import ForgotPassword from './components/forgotPassword';
+
 
 export default class Routes extends Component {
 
@@ -18,9 +20,11 @@ export default class Routes extends Component {
                     <Scene key="loading" component={LoadingScreen} title="Loading" />
                     <Scene key="login" component={Login} title="Login" />
                     <Scene key="signup" component={Register} title="Register" />
+                    <Scene key="forgotPass" component={ForgotPassword} title="Forgot Password" />
                     <Scene key="RegularUser" component={RegularUser} title="RegularUser" />
                     <Scene key="Volunteer" component={Volunteer} title="Volunteer" />
                     <Scene key="Responder" component={Responder} title="Responder" />
+
                 </Stack>
             </Router>
         )

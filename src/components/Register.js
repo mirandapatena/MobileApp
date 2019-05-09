@@ -11,6 +11,7 @@ import { Formik } from 'formik'
 import * as yup from 'yup'
 
 import Logo from './Logo';
+import { Actions } from 'react-native-router-flux';
 
 
 class Register extends Component {
@@ -66,7 +67,7 @@ class Register extends Component {
         const auth = fire2.auth();
         const promise = auth.createUserWithEmailAndPassword(email.trim(), password.trim());
         promise.then(user => {
-            Alert.alert(JSON.stringify(`Account ${values.email} has been created`))
+            Alert.alert(JSON.stringify(`Account ${values.email} has been created. Please wait within 24 hrs to be verified by admin`))
             Keyboard.dismiss();
             let app = fire2.database().ref('users/' + user.user.uid);
             let unverified = fire2.database().ref('unverifiedMobileUsers/' + user.user.uid);
@@ -93,7 +94,6 @@ class Register extends Component {
                         lng: 0,
                     },
                     incidentID: "",
-                    isAccepted: false,
                 })
 
             } else {
@@ -104,6 +104,7 @@ class Register extends Component {
                     },
                     incidentID: "",
                     isAccepted: false,
+                    isRejeted: false,
                 })
             }
 
@@ -118,11 +119,12 @@ class Register extends Component {
                 lastName: values.lastName,
                 contactNumber: values.contactNumber,
                 isMobile: true,
+                isVerified: false,
                 user_type: this.state.user_type,
             });
 
             console.log("Successfully Registered");
-
+            Actions.login();
         }).catch(e => {
             var err = e.message;
             Alert.alert(JSON.stringify(`${err}`))
@@ -169,6 +171,7 @@ class Register extends Component {
                 }>
                 {({ values, handleChange, errors, setFieldTouched, touched, isValid, handleSubmit }) => (
                     <View style={styles.container}>
+
                         <TextInput style={styles.inputBox}
                             underlineColorAndroid='rgba(0,0,0,0)'
                             placeholder="First Name"
@@ -213,7 +216,7 @@ class Register extends Component {
                             placeholder="Contact Number"
                             placeholderTextColor="#ffffff"
                             selectionColor="#fff"
-                            keyboardType="email-address"
+                            keyboardType="number-pad"
                             value={values.contactNumber}
                             onChangeText={handleChange('contactNumber')}
                             onBlur={() => setFieldTouched('contactNumber')}
