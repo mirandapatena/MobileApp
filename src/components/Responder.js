@@ -3,12 +3,12 @@
 import React, { Component } from "react";
 import {
     Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert,
-    DrawerLayoutAndroid
+    DrawerLayoutAndroid, BackHandler
 } from "react-native";
 import Modal from 'react-native-modal';
 import ActionButton, { ActionButtonItem } from 'react-native-action-button';
 import AwesomeButton from 'react-native-really-awesome-button';
-import Drawer from 'react-native-circle-drawer'
+import Drawer from 'react-native-circle-drawer';
 import Button from 'react-native-button'
 import BottomDrawer from 'rn-bottom-drawer';
 import RadioGroup from 'react-native-radio-buttons-group';
@@ -55,7 +55,7 @@ export default class Responder extends Component {
             isSettled: false,
             incidentPhoto: '',
             reportedBy: '',
-            timeReceive: '',
+            timeReceived: '',
             timeResponded: '',
             responderResponding: '',
             volunteerResponding: '',
@@ -96,12 +96,37 @@ export default class Responder extends Component {
 
     }
 
+    componentWillMount() {
+        BackHandler.addEventListener('hardwareBackPress', this.onBackPress);
+    }
+
+    componentWillUnmount() {
+        BackHandler.removeEventListener('hardwareBackPress', this.onBackPress);
+    }
+
+    onBackPress = () => {
+
+        //Code to display alert message when use click on android device back button.
+        Alert.alert(
+            ' Exit From App ',
+            ' Do you want to exit Tabang! Application?',
+            [
+                { text: 'Yes', onPress: () => BackHandler.exitApp() },
+                { text: 'No', onPress: () => console.log('NO Pressed') }
+            ],
+            { cancelable: false },
+        );
+
+        // Return true to enable back button over ride.
+        return true;
+    }
+
 
     signOutUser() {
         app.auth().signOut().then(function () {
             console.log("SUCCESFULL LOG OUT");
         }).catch(function (error) {
-            console.log(error)
+            console.log(error);
         });
 
     }
@@ -112,7 +137,7 @@ export default class Responder extends Component {
         app.auth().onAuthStateChanged(user => {
             if (user) {
                 this.setState({ user, userId: user.uid });
-                var userId = this.state.userId
+                var userId = this.state.userId;
                 this.getUserInfo();
                 this.incidentListener(userId);
 
@@ -138,10 +163,6 @@ export default class Responder extends Component {
             }
 
             that.setState({ userType, firstName, lastName });
-            app.database().ref(`mobileUsers/Responder/${that.state.userId}`).update({
-                incidentID: '',
-                isAccepted: false,
-            })
 
         })
 
@@ -158,7 +179,7 @@ export default class Responder extends Component {
             isRespondingResponder: true,
             unrespondedResponder: false,
             responderResponding: this.state.userId,
-            timeReceive: date,
+            timeReceived: date,
         });
 
         app.database().ref(`mobileUsers/Responder/${userId}`).update({
@@ -196,12 +217,13 @@ export default class Responder extends Component {
             incidentId: "",
             isAccepted: false,
 
-        })
-        var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
+        });
+
+        var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`);
         responderListen.update({
             incidentID: '',
             isAccepted: false,
-        })
+        });
     }
 
     isSettled = () => {
@@ -209,6 +231,8 @@ export default class Responder extends Component {
         let incidentID = this.state.incidentId;
         let userId = this.state.userId;
         console.log("is settled?", incidentID, userId);
+        var time = Date(Date.now());
+        date = time.toString();
 
         this.setState({
             isSettled: false,
@@ -219,16 +243,17 @@ export default class Responder extends Component {
             requestResponders: false,
             incidentId: "",
             isAccepted: false,
+        });
+        var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`);
 
-        })
-        var responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
         responderListen.update({
             incidentID: '',
             isAccepted: false,
-        })
+        });
 
         app.database().ref(`incidents/${incidentID}`).update({
             isSettled: true,
+            timeSettled: date,
         });
     }
 
@@ -268,11 +293,11 @@ export default class Responder extends Component {
             // isRequestingResponders: true,
             isIncidentReady: true,
             requestResponders: true,
-        })
+        });
 
         app.database().ref(`incidents/${incidentId}/requestResponders/${userId}`).update({
             timeArrived: '',
-            timeReceive: date,
+            timeReceived: date,
         });
 
         app.database().ref(`mobileUsers/Responder/${userId}`).update({
@@ -310,11 +335,11 @@ export default class Responder extends Component {
         this.setState({
             isIncidentReady: true,
             dispatchedResponder: true,
-        })
+        });
 
         app.database().ref(`incidents/${incidentID}/additionalDispatched/${userId}`).update({
             timeArrived: '',
-            timeReceive: date,
+            timeReceived: date,
         });
 
         app.database().ref(`mobileUsers/Responder/${userId}`).update({
@@ -328,7 +353,7 @@ export default class Responder extends Component {
     incidentListener = (userId) => {
         // this._isMounted = true;
         console.log("INCIDNE LISTENER", userId);
-        this.responderListen = app.database().ref(`mobileUsers/Responder/${userId}`)
+        this.responderListen = app.database().ref(`mobileUsers/Responder/${userId}`);
         var that = this;
         var incidentDetails = '';
 
@@ -345,7 +370,7 @@ export default class Responder extends Component {
                 this.userIncidentId = app.database().ref(`incidents/${incidentID}`);
                 app.database().ref(`mobileUsers/Responder/${that.state.userId}`).update({
                     incidentID: incidentID,
-                })
+                });
                 this.userIncidentId.on('value', (snapshot) => {
                     incidentDetails = snapshot.val() || null;
                     var incidentType = incidentDetails.incidentType;
@@ -467,7 +492,7 @@ export default class Responder extends Component {
                         );
                     }
                     else {
-                        console.log("system is FLAWED")
+                        console.log("system is FLAWED");
                     }
                 })
             }
@@ -568,7 +593,7 @@ export default class Responder extends Component {
             isSettled: false,
             incidentPhoto: '',
             reportedBy: this.state.userId,
-            timeReceive: date,
+            timeReceived: date,
             timeResponderResponded: '',
             responderResponding: this.state.userId,
             volunteerResponding: '',
@@ -580,8 +605,8 @@ export default class Responder extends Component {
             isRequestingResponders: false,
             isRequestingVolunteers: false,
         }).then((snap) => {
-            const incidentUserKey = snap.key
-            this.setState({ incidentUserKey })
+            const incidentUserKey = snap.key;
+            this.setState({ incidentUserKey });
             console.log("INCIDENT USER KEY HEREEEEE: ", this.state.userId);
         })
         this.setState({
@@ -592,7 +617,7 @@ export default class Responder extends Component {
             isSettled: null,
             incidentPhoto: '',
             reportedBy: '',
-            timeReceive: '',
+            timeReceived: '',
             timeResponded: '',
             responderResponding: '',
             volunteerResponding: '',
@@ -719,12 +744,12 @@ export default class Responder extends Component {
                     </Text></View>
                 <View style={styles.responderButtons}>
                     {this.state.requestResponders === true ?
-                        <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={this.arrivedLocationRequested}>I have arrived! Requested. </AwesomeButton></View>
+                        <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={this.arrivedLocationRequested}>I have arrived! </AwesomeButton></View>
                         :
                         this.state.dispatchedResponder === false ?
                             <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={this.arrivedLocation}>I have arrived! </AwesomeButton></View>
                             :
-                            <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={this.arrivedLocationDispatched}>I have arrived! Dispatched. </AwesomeButton></View>
+                            <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#467541" onPress={this.arrivedLocationDispatched}>I have arrived! </AwesomeButton></View>
                     }
                     <View style={styles.buttonContainer}><AwesomeButton height={50} width={190} backgroundColor="#2c6c7c" onPress={this.isSettled}>Incident is settled!</AwesomeButton></View>
                 </View>
@@ -786,7 +811,7 @@ export default class Responder extends Component {
                 strokeWidth={4}
                 strokeColor="red"
             />
-        )
+        );
 
         if (this.state.latitude) {
             getUserLocation = (
@@ -804,7 +829,7 @@ export default class Responder extends Component {
                         source={require("../images/userPosition.png")}
                         style={{ height: 45, width: 45 }} />
                 </Marker>
-            )
+            );
         }
 
         const locationPredictions = this.state.locationPredictions.map(
