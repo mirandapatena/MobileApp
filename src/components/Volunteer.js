@@ -984,7 +984,7 @@
 
 
 import React, { Component } from "react";
-import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert } from "react-native";
+import { Text, TouchableOpacity, View, Image, Dimensions, TextInput, StyleSheet, TouchableHighlight, Keyboard, Alert, BackHandler } from "react-native";
 import Modal from 'react-native-modal';
 import ActionButton, { ActionButtonItem } from 'react-native-action-button';
 import AwesomeButton from 'react-native-really-awesome-button';
@@ -1038,7 +1038,7 @@ export default class Volunteer extends Component {
             isSettled: false,
             incidentPhoto: '',
             reportedBy: '',
-            timeReceive: '',
+            timeReceived: '',
             timeResponded: '',
             responderResponding: '',
             volunteerResponding: '',
@@ -1080,6 +1080,32 @@ export default class Volunteer extends Component {
 
             }
         });
+    }
+
+
+    componentWillMount() {
+        BackHandler.addEventListener('hardwareBackPress', this.onBackPress);
+    }
+
+    componentWillUnmount() {
+        BackHandler.removeEventListener('hardwareBackPress', this.onBackPress);
+    }
+
+    onBackPress = () => {
+
+        //Code to display alert message when use click on android device back button.
+        Alert.alert(
+            ' Exit From App ',
+            ' Do you want to exit Tabang! Application?',
+            [
+                { text: 'Yes', onPress: () => BackHandler.exitApp() },
+                { text: 'No', onPress: () => console.log('NO Pressed') }
+            ],
+            { cancelable: false },
+        );
+
+        // Return true to enable back button over ride.
+        return true;
     }
 
     getUserInfo = () => {
@@ -1271,7 +1297,7 @@ export default class Volunteer extends Component {
         app.database().ref(`incidents/${incidentId}/requestVolunteers/${userId}`).update({
 
             timeArrived: '',
-            timeReceive: date1,
+            timeReceived: date1,
         });
 
         app.database().ref(`mobileUsers/Volunteer/${userId}`).update({
@@ -1516,7 +1542,7 @@ export default class Volunteer extends Component {
             isSettled: false,
             incidentPhoto: '',
             reportedBy: this.state.userId,
-            timeReceive: date1,
+            timeReceived: date1,
             timeResponded: '',
             responderResponding: this.state.userId,
             volunteerResponding: '',
@@ -1540,7 +1566,7 @@ export default class Volunteer extends Component {
             isSettled: null,
             incidentPhoto: '',
             reportedBy: '',
-            timeReceive: '',
+            timeReceived: '',
             timeResponded: '',
             responderResponding: '',
             volunteerResponding: '',

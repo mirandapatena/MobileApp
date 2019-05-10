@@ -1,5 +1,5 @@
 #Internal package file, do not edit.
-#Fri May 10 18:50:12 SGT 2019
+#Sat May 11 03:11:56 SGT 2019
 56.path=lib/x86_64/libstatic-webp.so
 5.base=C\:\\Users\\Lester\\Documents\\thesis_react\\Thesis_App_React_2.0\\what\\MobileApp\\android\\app\\build\\intermediates\\transforms\\mergeJniLibs\\debug\\0
 42.base=C\:\\Users\\Lester\\Documents\\thesis_react\\Thesis_App_React_2.0\\what\\MobileApp\\android\\app\\build\\intermediates\\transforms\\mergeJniLibs\\debug\\0

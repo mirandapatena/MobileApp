@@ -898,6 +898,7 @@ public final class R {
         public static final int common_google_play_services_install_button = 0x7f0c0044;
         public static final int common_google_play_services_install_text = 0x7f0c0045;
         public static final int common_google_play_services_install_title = 0x7f0c0046;
+        public static final int common_google_play_services_notification_channel_name = 0x7f0c0047;
         public static final int common_google_play_services_notification_ticker = 0x7f0c0048;
         public static final int common_google_play_services_unknown_issue = 0x7f0c0049;
         public static final int common_google_play_services_unsupported_text = 0x7f0c004a;
