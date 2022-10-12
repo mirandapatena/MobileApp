@@ -14,7 +14,7 @@
     "formik": "^1.5.2",
     "lodash": "^4.17.11",
     "react": "16.6.3",
-    "react-native": "0.58.6",
+    "react-native": "0.70.2",
     "react-native-action-button": "^2.8.5",
     "react-native-app-settings": "^2.0.1",
     "react-native-awesome-alerts": "^1.2.0",
